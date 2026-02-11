@@ -5,8 +5,8 @@ help:
 build:
     #!/bin/bash
     cd "{{invocation_directory()}}"
-    ca65 *.asm
-    ld65 --config ../breadboard.cfg *.o -o rom.bin
+    ca65 --include-dir "{{justfile_directory()}}/src/" *.s
+    ld65 --config "{{justfile_directory()}}/src/breadboard.cfg" *.o -o rom.bin
 
 # Write ROM from invocation directory to EEPROM
 write:

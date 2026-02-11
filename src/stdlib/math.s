@@ -1,32 +1,27 @@
 .SCOPE Math
 
-.segment "ZP"
-    word_a:   .res 2
-    word_b:   .res 2
-    word_c:   .res 2
-
 .segment "CODE"
 
 .PROC divmod16
     ; Perform divmod operation on a 2 byte word.
     ;
     ; In:
-    ;   Math::word_a = the number to divide
-    ;   Math::word_b = what to divide by
+    ;   Regs::word_a = the number to divide
+    ;   Regs::word_b = what to divide by
     ; Out:
-    ;   Math::word_a = quotient
-    ;   Math::word_b = preserved
-    ;   Math::word_c = remainder
+    ;   Regs::word_a = quotient
+    ;   Regs::word_b = preserved
+    ;   Regs::word_c = remainder
     ;   A = clobbered
     ;   X/Y = preserved
 
     phx
     phy
 
-    ; Initialize the remainder c.
+    ; Initialize the remainder word_c.
     lda #0
-    sta word_c
-    sta word_c + 1
+    sta Regs::word_c
+    sta Regs::word_c + 1
     clc
     
     ldx #16
@@ -37,21 +32,21 @@
         ; end of the quotient, where the carry bit represents if the previous divide
         ; by the divisor was possible or not. This way, the quotient builds up
         ; bit by bit during the computations.
-        rol word_a                   ; Low byte << 1
-        rol word_a + 1               ; High byte << 1
-        rol word_c                   ; Low byte << 1
-        rol word_c + 1               ; High byte << 1
+        rol Regs::word_a            ; Low byte << 1
+        rol Regs::word_a + 1        ; High byte << 1
+        rol Regs::word_c            ; Low byte << 1
+        rol Regs::word_c + 1        ; High byte << 1
 
         ; See if we can subtract the divisor from the bit value that is currently
         ; shifted into the remainder bytes. When remainder < divisor, then the
         ; result will become negative, and the carry bit will be set to 0
         ; (due to borrowing).
         sec                         ; Set carry bit, to detect carry borrow for sbc
-        lda word_c                  ; Load low byte of remainder
-        sbc word_b                  ; Subtract low byte of divisor -> A
+        lda Regs::word_c            ; Load low byte of remainder
+        sbc Regs::word_b            ; Subtract low byte of divisor -> A
         tay                         ; A -> Y
-        lda word_c + 1              ; Load high byte of remainder
-        sbc word_b + 1              ; Subtract high byte of divisor -> A
+        lda Regs::word_c + 1        ; Load high byte of remainder
+        sbc Regs::word_b + 1        ; Subtract high byte of divisor -> A
 
         ; If carry bit is cleared, then division was not possible. We continue
         ; with shifting another bit, to see if that makes a division possible.
@@ -61,15 +56,15 @@
         ; with the new remainder and the rest of the digits, which in this case can be
         ; accompolished by updating the remainder word with the remainder from the
         ; subtraction from above.
-        sty word_c                  ; Update remainder low byte <- Y
-        sta word_c + 1              ; Update remainder high byte <- A
+        sty Regs::word_c             ; Update remainder low byte <- Y
+        sta Regs::word_c + 1         ; Update remainder high byte <- A
 
     @no_div_possible:
         dex
         bne @divloop                ; Process all 16 bits, before continuing.
    
-        rol word_a                  ; Shift last carry bit (representing if the last
-        rol word_a + 1              ; division was possible or not) into the quotient.
+        rol Regs::word_a            ; Shift last carry bit (representing if the last
+        rol Regs::word_a + 1        ; division was possible or not) into the quotient.
 
     ply
     plx

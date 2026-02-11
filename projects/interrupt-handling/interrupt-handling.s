@@ -1,8 +1,12 @@
-.include "../bios/bios.asm"
+.include "bios/bios.s"
+.include "stdlib/common.s"
+.include "stdlib/math.s"
+.include "stdlib/string.s"
+.include "macros/inc16.s"
 
 .segment "DATA"
 
-    hello:       .asciiz "Press button!"
+    hello: .asciiz "Press button!"
 
 .segment "VARIABLES"
 
@@ -12,19 +16,20 @@
 
     main:
         lda #0
-        sta irq_counter            ; Reset the IRQ counter
+        sta irq_counter           ; Reset the IRQ counter
         sta irq_counter + 1
 
-        sta PCR                    ; Trigger VIA CA1 interrupt on falling edge
-        lda #(IER_SET | IER_CA1)   ; Activate interrupts for CA1
+        lda #(IER_SET | IER_CA1)  ; Activate interrupts for CA1
         sta IER
+        lda #0
+        sta PCR                   ; Trigger VIA CA1 interrupt on falling edge
 
-        lda #<handle_irq           ; Configure IRQ handler to use.
-        sta Bios::irq_vector
-        lda #>handle_irq
-        sta Bios::irq_vector + 1
+        lda #<dispatch_irq        ; Configure IRQ handler to use.
+        sta BIOS::irq_vector
+        lda #>dispatch_irq
+        sta BIOS::irq_vector + 1
         
-        cli                        ; Enable interrupts
+        cli                       ; Enable interrupts
 
         jsr hello_world
 
@@ -41,8 +46,8 @@
         lda irq_counter             ; when the IRQ counter gets updated right between
         sta String::word2dec::value ; reading the two bytes here.
         lda irq_counter + 1
-        cli
         sta String::word2dec::value + 1
+        cli
         jsr String::word2dec
 
         jsr lcd_home
@@ -51,7 +56,7 @@
         jmp @loop_irq_counter
 
 
-    ; Subroutine: print the decimal string
+    ; Subroutine: print the decimal string.
     ; Out: Y clobbered
     print_decimal:
         pha
@@ -86,11 +91,8 @@
         rts
 
 
-    handle_irq:
-        inc irq_counter     ; Increment the IRQ counter
-        bne @done           ; Return on no roll-over
-        inc irq_counter + 1 ; Roll-over, increment the high byte too
-    @done:
-        bit PORTA           ; Read PORTA to clear interrupt
+    dispatch_irq:
+        inc16 irq_counter  ; Increment the IRQ counter
+        bit PORTA          ; Read PORTA to clear interrupt
         rti
 

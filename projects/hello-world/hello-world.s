@@ -1,13 +1,12 @@
-.include "../bios/bios.asm"
+.include "bios/bios.s"
 
 .segment "CODE"
 
     main:
         jsr hello_world
-        jsr halt
+        jsr BIOS::halt
 
-    ; Subroutine: print "Hello, world!" to the LCD.
-    hello_world:
+    .PROC hello_world
         pha
         phx
         ldx #0
@@ -21,6 +20,7 @@
         plx
         pla
         rts
+    .ENDPROC
 
 
 .segment "DATA"

@@ -1,4 +1,6 @@
-; Constants for the W65C22 VIA (Versatile Interface Adapter)
+; -----------------------------------------------------------------
+; W65C22 VIA (Versatile Interface Adapter)
+; -----------------------------------------------------------------
 
 ; Registers
 PORTB     = $6000       ; I/O register for port B

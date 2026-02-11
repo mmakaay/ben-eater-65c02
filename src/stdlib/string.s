@@ -10,7 +10,7 @@
     ;   A = clobbered
     ;   X/Y = preserved
 
-    .segment "ZP"
+    .segment "ZEROPAGE"
 
         value:   .res 2
         decimal: .res 6                 ; "65535" max + 1 null byte
@@ -31,25 +31,25 @@
 
         ; Set up divmod inputs once before the loop.
         lda value
-        sta Math::word_a
+        sta Regs::word_a
         lda value + 1
-        sta Math::word_a + 1
+        sta Regs::word_a + 1
         lda #10
-        sta Math::word_b
+        sta Regs::word_b
         lda #00
-        sta Math::word_b + 1
+        sta Regs::word_b + 1
 
         @next_digit:
         jsr Math::divmod16
 
         clc                         ; Clear carry for clean addition
-        lda Math::word_c            ; Get computed remainder
+        lda Regs::word_c            ; Get computed remainder
         adc #'0'                    ; Add remainder to ASCII value of "0"
         jsr add_digit_to_decimal    ; And add it to the decimal buffer
 
         ; Repeat until all base 10 digits have been extracted.
-        lda Math::word_a
-        ora Math::word_a + 1
+        lda Regs::word_a
+        ora Regs::word_a + 1
         bne @next_digit  ; Branch if the quotient is not yet at zero
 
         ply
