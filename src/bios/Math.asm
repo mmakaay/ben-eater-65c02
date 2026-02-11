@@ -1,9 +1,9 @@
 .SCOPE Math
 
 .segment "ZP"
-    word_a:   .word 0
-    word_b:   .word 0
-    word_c:   .word 0
+    word_a:   .res 2
+    word_b:   .res 2
+    word_c:   .res 2
 
 .segment "CODE"
 
@@ -15,6 +15,7 @@
     ;   Math::word_b = what to divide by
     ; Out:
     ;   Math::word_a = quotient
+    ;   Math::word_b = preserved
     ;   Math::word_c = remainder
     ;   A = clobbered
     ;   X/Y = preserved

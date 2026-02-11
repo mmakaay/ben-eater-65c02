@@ -23,7 +23,7 @@
         sta Bios::irq_vector
         lda #>handle_irq
         sta Bios::irq_vector + 1
-
+        
         cli                        ; Enable interrupts
 
         jsr hello_world
@@ -37,9 +37,11 @@
 
     @loop_irq_counter:
         ; Convert the number to a decimal string.
-        lda irq_counter
-        sta String::word2dec::value
+        sei                         ; Disable interrupts, to prevent race condition
+        lda irq_counter             ; when the IRQ counter gets updated right between
+        sta String::word2dec::value ; reading the two bytes here.
         lda irq_counter + 1
+        cli
         sta String::word2dec::value + 1
         jsr String::word2dec
 

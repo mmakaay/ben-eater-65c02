@@ -18,15 +18,15 @@
                                ; using `cli` when code that uses this
                                ; bios requires interrupts)
 
-        LDA #<default_nmi      ; Set default NMI handler.
-        STA nmi_vector         ; This vector can be overridden to
-        LDA #>default_nmi      ; point to a custom NMI handler.
-        STA nmi_vector + 1
+        lda #<default_nmi      ; Set default NMI handler.
+        sta nmi_vector         ; This vector can be overridden to
+        lda #>default_nmi      ; point to a custom NMI handler.
+        sta nmi_vector + 1
 
-        LDA #<default_nmi      ; Same for the IRQ handler.
-        STA nmi_vector
-        LDA #>default_nmi
-        STA nmi_vector + 1
+        lda #<default_irq      ; Same for the IRQ handler.
+        sta irq_vector
+        lda #>default_irq
+        sta irq_vector + 1
 
         ldx #$ff               ; Initialize stack pointer
         txs
@@ -39,7 +39,7 @@
 
     ; Can be jumped to, to fully halt the computer.
     halt:
-        jmp halt               ; Stop execution
+        bra halt               ; Stop execution
 
 
 .segment "ZP"
@@ -64,7 +64,7 @@
     default_nmi:
         rti
     
-    default_ieq:
+    default_irq:
         rti
 
 .ENDSCOPE
