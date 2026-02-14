@@ -26,7 +26,7 @@
         cp_address BIOS::irq_vector, handle_irq
         cli
 
-        jsr hello_world
+        jsr print_welcome
 
     @wait_for_button:
         lda irq_counter
@@ -65,8 +65,6 @@
         jmp @loop_irq_counter
 
 
-    ; Subroutine: print string buffer in reverse.
-    ; Out: Y clobbered
     @print_str_reverse:
         ldy Regs::strlen
     @loop:
@@ -74,14 +72,13 @@
         beq @done
         dey
         lda Regs::str,y
-        jsr LCD::send_data
+        jsr LCD::write
         jmp @loop
     @done:
         rts
 
 
-    ; Subroutine: print welcome message to the LCD.
-    hello_world:
+    print_welcome:
         pha
         txa
         pha
@@ -89,7 +86,7 @@
     @loop:
         lda hello,x
         beq @done
-        jsr LCD::send_data
+        jsr LCD::write
         inx
         jmp @loop
     @done:
@@ -102,7 +99,7 @@
     handle_irq:
         pha
         inc_word irq_counter  ; Increment the IRQ counter
-        bit VIA::REG::PORTA             ; Read PORTA to clear interrupt
+        bit VIA::REG::PORTA   ; Read PORTA to clear interrupt
         pla
         rti
 
