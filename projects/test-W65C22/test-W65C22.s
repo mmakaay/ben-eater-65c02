@@ -61,7 +61,6 @@ PORTA_DIR = $6003
 
         jmp LOOP         ; And repeat ad infinitum
 
-
 .segment "VECTORS"
 
     .word RESET          ; NMI vector

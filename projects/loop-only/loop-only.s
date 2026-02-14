@@ -2,19 +2,19 @@
 
 ; Suppress warnings about segments that are in the breadboard.cfg memory
 ; layout, but that are not used in this minimal application.
-.SEGMENT "ZEROPAGE"
-.SEGMENT "BIOS"
-.SEGMENT "DATA"
-.SEGMENT "VARIABLES"
+.segment "ZEROPAGE"
+.segment "BIOS"
+.segment "DATA"
+.segment "VARIABLES"
 
-.SEGMENT "CODE"
+.segment "CODE"
 
-    HALT:
-        JMP HALT
+    halt:
+        jmp halt
 
-.SEGMENT "VECTORS"
+.segment "VECTORS"
 
-    .WORD $0000        ; NMI VECTOR
-    .WORD HALT         ; RESET VECTOR
-    .WORD $0000        ; IRQ VECTOR
+    .word $0000        ; NMI VECTOR
+    .word halt         ; RESET VECTOR
+    .word $0000        ; IRQ VECTOR
 

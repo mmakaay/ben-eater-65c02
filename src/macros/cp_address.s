@@ -6,9 +6,9 @@ CP_ADDRESS_S = 1
 .macro cp_address target, source
     ; Store a 16 bit address in two consecutive memory positions.
     ;
-    ; This stores the address of the source label, not the
-    ; contents at that address. Useful for setting up indirect
-    ; jump vectors and pointers.
+    ; This stores the address of the source label (not the
+    ; contents) at that address. Useful for example for setting
+    ; up indirect jump vectors and pointers.
     ;
     ; In:
     ;   target = address to store into
