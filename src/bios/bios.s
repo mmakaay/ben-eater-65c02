@@ -13,9 +13,9 @@ BIOS_S = 1
 .setcpu "6502"
 
 .include "macros/macros.s"
-.include "via.s"
-.include "lcd.s"
-;.include "serial.s"
+.include "via_W65C22.s"
+.include "lcd_HD44780.s"
+.include "acia_UM6551.s"
 
 ; Prevent build warnings when a segment is not used in an application.
 .segment "DATA"
@@ -26,19 +26,18 @@ BIOS_S = 1
 .segment "BIOS"
 
     boot:
-        ldx #$ff               ; Initialize stack pointer
+        ldx #$ff  ; Initialize stack pointer
         txs
 
-        jsr init_interrupts    ; Initialze interrupt handling
-        jsr LCD::init          ; Initialize LCD display
-        jsr LCD::clr           ; Clear LCD display
-        ;jsr SERIAL::init       ; Initialize the ACIA serial connection
+        jsr init_interrupts
+        jsr LCD::init
+        jsr SERIAL::init
 
-        jmp main               ; Note: `main` must be implemented by application
+        jmp main  ; Note: `main` must be implemented by application
 
-    ; Can be jumped to, to fully halt the computer.
+    ; Can be jumped to (jmp BIOS::halt), to halt the computer.
     halt:
-        jmp halt               ; Stop execution
+        jmp halt
 
 .segment "ZEROPAGE"
 
@@ -58,9 +57,11 @@ BIOS_S = 1
         ;
         ; Out:
         ;   A = clobbered
-        sei                    ; Disable interrupts (must be enabled
-                               ; using `cli` when code that uses this
-                               ; bios requires interrupts)
+
+        ; Disable interrupts. If code that uses this BIOS requires
+        ; interrupt handling, these must be enabled using `cli`.
+        sei
+
         cp_address nmi_vector, default_nmi
         cp_address irq_vector, default_irq
 

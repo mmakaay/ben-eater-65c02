@@ -1,11 +1,11 @@
 ; -----------------------------------------------------------------
-; W65C51 ACIA (Asynchronous Communications Interface Adapter)
+; UM6551 ACIA (Asynchronous Communications Interface Adapter)
 ; -----------------------------------------------------------------
 
-.ifndef SERIAL_S
-SERIAL_S = 1
+.ifndef BIOS_ACIA_UM6551_S
+BIOS_ACIA_UM6551_S = 1
 
-.include "macros/macros.s"
+.include "bios/bios.s"
 
 .scope SERIAL
 
@@ -36,36 +36,64 @@ SERIAL_S = 1
     PARITYERR  = %00000001       ; Bit is 1 when Parity Error was detected
 
     ; CMD register
+
+    ; Parity check controls
     PAROFF     = %00000000       ; Parity disabled
     PARODD     = %00100000       ; Odd parity receiver and transmitter
     PAREVEN    = %01000000       ; Even parity receiver and transmitter
-    PARPTCD    = %10100000       ; Mark parity bit transmitted, parity check disabled
-    PARSTCD    = %11100000       ; Space parity bit transmitted, parity check disabled
-    REM        = %00010000       ; Receiver Echo Mode enable (use with TIC0)
-    TIC0       = %00000000       ; Transmit interrupt = off, RTS level high, transmitter off
-    TIC1       = %00000100       ; Transmit interrupt = on,  RTS level Low,  transmitter = on
-    TIC2       = %00001000       ; Transmit interrupt = off, RTS level Low,  transmitter = on
-    TIC3       = %00001100       ; Transmit interrupt = off, RTS level Low,  transmitter = transmit BRK
-    RIRD       = %00000010       ; IRQB receiver interrupt disabled
-    DTR        = %00000001       ; Enable receiver and all interrupts (DTRB to low)
+    PARMARK    = %10100000       ; Mark parity bit transmitted, parity check disabled
+    PARSPACE   = %11100000       ; Space parity bit transmitted, parity check disabled
+
+    ; Receiver echo
+    ECHOOFF    = %00000000       ; Echo disabled
+    ECHOON     = %00010000       ; Echo enabled (use with TIC0)
+
+    ; Transmitter controls
+    TIC0       = %00000000       ; Transmit interrupt = off, RTS = high, transmitter = off
+    TIC1       = %00000100       ; Transmit interrupt = on,  RTS = low,  transmitter = on
+    TIC2       = %00001000       ; Transmit interrupt = off, RTS = low,  transmitter = on
+    TIC3       = %00001100       ; Transmit interrupt = off, RTS = Low,  transmitter = transmit BRK
+
+    ; Receiver interrupt control
+    IRQON      = %00000000       ; IRQB enabled (from bit 3 of status register) TODO read how this works
+    IRQOFF     = %00000010       ; IRQB disabled
+
+    ; Data terminal ready control
+    DTROFF     = %00000000       ; Disable receiver and all interrupts (DTRB to high)
+    DTRON      = %00000001       ; Enable receiver and all interrupts (DTRB to low)
 
     ; CTRL register
+
     ; Stop Bit Number (SBN)
-    STOPBIT1   = %00000000       ; 1 stop bit
-    STOPBIT2   = %10000000       ; 2 stop bits, 1.5 for WL5 - parity, 1 for WL8 + parity
+    STOP1      = %00000000       ; 1 stop bit
+    STOP2      = %10000000       ; 2 stop bits, 1.5 for WL5 - parity, 1 for WL8 + parity
+
     ; Word Length (WL)
-    WORDLEN8   = %00000000       ; 8 bits per word
-    WORDLEN7   = %00100000       ; 7 bits per word
-    WORDLEN6   = %01000000       ; 6 bits per word
-    WORDLEN5   = %01100000       ; 5 bits per word
+    LEN8       = %00000000       ; 8 bits per word
+    LEN7       = %00100000       ; 7 bits per word
+    LEN6       = %01000000       ; 6 bits per word
+    LEN5       = %01100000       ; 5 bits per word
+
     ; Receiver Clock Source (RCS)
-    CLKEXT     = %00000000       ; External
-    CLKBAUD    = %00010000       ; Baud rate generator
+    BAUDEXT    = %00000000       ; Use external clock (on RxC, providing a 16x clock input) 
+    BAUDGEN    = %00010000       ; Use baud rate generator (using 1.8432 MHz crystal on XTAL1/XTAL2)
+
     ; Selected Baud Rate (SBR)
-    BAUD2400   = %00001010       ; Baud rate 2400
-    BAUD7200   = %00001101       ; Baud rate 7200
-    BAUD9600   = %00001110       ; Baud rate 9600
-    BAUD19200  = %00001111       ; Baud rate 19200
+    BEXT       = %00000000       ; 16x external clock
+    B50        = %00000001       ; Baud rate 50
+    B75        = %00000010       ; Baud rate 75
+    B109       = %00000011       ; Baud rate 109.92
+    B134       = %00000100       ; Baud rate 134.58
+    B150       = %00000101       ; Baud rate 150
+    B300       = %00000110       ; Baud rate 300
+    B600       = %00000111       ; Baud rate 600
+    B1200      = %00001000       ; Baud rate 1200
+    B2400      = %00001010       ; Baud rate 2400
+    B3600      = %00001011       ; Baud rate 3600
+    B4800      = %00001100       ; Baud rate 4800
+    B7200      = %00001101       ; Baud rate 7200
+    B9600      = %00001110       ; Baud rate 9600
+    B19200     = %00001111       ; Baud rate 19200
     .endscope
 
     .proc init
@@ -77,11 +105,19 @@ SERIAL_S = 1
         ; Write to status register for soft reset
         clr_byte REG::STATUS
 
+        ; Wait for soft reset to complete.
+        ; The ACIA needs time to finish its internal reset before
+        ; CTRL and CMD writes will take effect.
+        ldx #$ff
+    @reset_wait:
+        dex
+        bne @reset_wait
+
         ; Configure: 8 bits, 1 stopbit, 19200 baud
-        set_byte REG::CTRL, #(BIT::STOPBIT1 | BIT::WORDLEN8 | BIT::BAUD19200)
+        set_byte REG::CTRL, #(BIT::STOP1 | BIT::LEN8 | BIT::BAUDGEN | BIT::B19200)
 
         ; Configure: no parity, no echo, no transmitter/receiver interrupts 
-        set_byte REG::CMD, #(BIT::PAROFF | BIT::TIC2 | BIT::RIRD | BIT::DTR)
+        set_byte REG::CMD, #(BIT::PAROFF | BIT::ECHOOFF | BIT::TIC2 | BIT::IRQOFF | BIT::DTRON)
 
         rts
     .endproc
