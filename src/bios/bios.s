@@ -14,6 +14,7 @@ BIOS_S = 1
 
 .include "macros/macros.s"
 .include "via_W65C22.s"
+.include "gpio.s"
 .include "lcd.s"
 .include "uart.s"
 
