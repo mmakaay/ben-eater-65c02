@@ -49,15 +49,15 @@ BIOS_LCD_HD44780_S = 1
         ; Initialize all pins connected to the LCD in output mode.
         ; Port A (CMND register) will always be in output mode from here on. 
         ; Port B (DATA register) will toggle input/output mode, depending on use.
-        lda VIA_PORTA_PINS
+        lda #VIA_PORTA_PINS
         jsr VIA::porta_set_outputs
-        lda VIA_PORTB_PINS  
+        lda #VIA_PORTB_PINS
         jsr VIA::portb_set_outputs
 
         ; Clear LCD control bits (EN, RW, RS), preserving non-LCD pins.
-        lda VIA::REG::PORTA
-        and #(VIA_PORTA_PINS ^ $ff)
-        sta VIA::REG::PORTA
+        lda #VIA_PORTA_PINS
+        ldx #0
+        jsr VIA::porta_set_pins
 
         ; Configure an initial display mode.
         lda #%00111000   ; Set 8-bit mode, 2 line display, 5x8 font
@@ -97,15 +97,16 @@ BIOS_LCD_HD44780_S = 1
         ; Put the byte on the LCD data bus.
         sta VIA::REG::PORTB
 
-        ; Trigger transfer of the byte to the instruction register.
-        lda VIA::REG::PORTA            ; RWB = 0 (write), RS = 1 (CMND register)
-        and #(VIA_PORTA_PINS ^ $ff)
-        ora #(PIN_RWB ^ $ff | PIN_RS)
-        sta VIA::REG::PORTA
-        ora #PIN_EN                    ; Turn on enable bit to trigger data transfer
-        sta VIA::REG::PORTA
-        and #(PIN_EN ^ $ff)            ; Turn off enable bit to stop data transfer
-        sta VIA::REG::PORTA
+        ; Set control pins: RWB=0 (write), RS=0 (CMND), EN=0.
+        lda #VIA_PORTA_PINS
+        ldx #0
+        jsr VIA::porta_set_pins
+
+        ; Pulse EN high then low to trigger data transfer.
+        lda #PIN_EN
+        jsr VIA::porta_turn_on
+        lda #PIN_EN
+        jsr VIA::porta_turn_off
         
         rts
     .endproc
@@ -124,20 +125,24 @@ BIOS_LCD_HD44780_S = 1
     .proc write_no_wait
         ; Write byte to DATA register.
         ;
+        ; In:
+        ;   A = byte to write
         ; Out:
-        ;   A = clobbered
+        ;   A = preserved
+
         sta VIA::REG::PORTB
-        
-        ; Transfer byte to the data register.
         pha
-        lda VIA::REG::PORTA            ; RWB = 0 (write), RS = 0 (DATA register)
-        and #(VIA_PORTA_PINS ^ $ff)
-        ora #(PIN_RWB ^ $ff | PIN_RS ^ $ff)
-        sta VIA::REG::PORTA
-        ora #PIN_EN                    ; Turn on enable bit to trigger data transfer
-        sta VIA::REG::PORTA
-        and #(PIN_EN ^ $ff)            ; Turn off enable bit to stop data transfer
-        sta VIA::REG::PORTA
+        
+        ; Set control pins: RWB=0 (write), RS=1 (DATA), EN=0.
+        lda #VIA_PORTA_PINS
+        ldx #PIN_RS
+        jsr VIA::porta_set_pins
+
+        ; Pulse EN high then low to trigger data transfer.
+        lda #PIN_EN
+        jsr VIA::porta_turn_on
+        lda #PIN_EN
+        jsr VIA::porta_turn_off
         pla
 
         rts
@@ -154,18 +159,18 @@ BIOS_LCD_HD44780_S = 1
         lda #VIA_PORTB_PINS
         jsr VIA::portb_set_inputs
 
-        ; Read the status from the LCD.
-        lda VIA::REG::PORTA            ; RWB = 1 (read), RS = 1 (CMND register)
-        and #(VIA_PORTA_PINS ^ $ff)
-        ora #(PIN_RWB | PIN_RS)
-        sta VIA::REG::PORTA
-        ora #PIN_EN                    ; Enable LCD data transfer
-        sta VIA::REG::PORTA
+        ; Set control pins: RWB=1 (read), RS=0 (CMND), EN=0.
+        lda #VIA_PORTA_PINS
+        ldx #PIN_RWB
+        jsr VIA::porta_set_pins
+
+        ; Pulse EN high, read PORTB, then EN low.
+        lda #PIN_EN
+        jsr VIA::porta_turn_on
         lda VIA::REG::PORTB            ; Read status byte from the LCD
         pha
-        lda VIA::REG::PORTA            ; Disable LCD data transfer
-        and #(PIN_EN ^ $ff)
-        sta VIA::REG::PORTA
+        lda #PIN_EN
+        jsr VIA::porta_turn_off
         
         ; Restore VIA port B for output.
         lda #VIA_PORTB_PINS

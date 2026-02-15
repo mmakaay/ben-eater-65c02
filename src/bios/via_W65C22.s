@@ -89,6 +89,136 @@ BIOS_VIA_W65C22_S = 1
         rts
     .endproc
 
+    .proc porta_set_pins
+        ; Set pin values on port A for a selected group of pins.
+        ; Pins not selected by the mask are preserved.
+        ;
+        ; Note: the port is written twice. In the intermediate state, all
+        ; masked pins are LOW. This is safe for the HD44780 LCD, where
+        ; EN is edge-triggered on HIGH->LOW.
+        ;
+        ; Usage:
+        ;   lda #(VIA::BIT::P7 | VIA::BIT::P6 | VIA::BIT::P5)  ; mask: pins to update
+        ;   ldx #(VIA::BIT::P7 | VIA::BIT::P5)                  ; values: P7=1, P6=0, P5=1
+        ;   jsr VIA::porta_set_pins
+        ;
+        ; In:
+        ;   A = pin mask (1 = update this pin, 0 = preserve)
+        ;   X = pin values (desired state for masked pins)
+        ; Out:
+        ;   A = clobbered
+        ;   X = preserved
+
+        eor #$ff            ; Invert mask to get preserve-mask
+        and REG::PORTA      ; A = preserved pin values (masked pins cleared)
+        sta REG::PORTA      ; Write with masked pins low (intermediate state)
+        txa                 ; A = desired pin values
+        ora REG::PORTA      ; Merge with preserved values
+        sta REG::PORTA      ; Write final result
+        rts
+    .endproc
+
+    .proc porta_turn_on
+        ; Turn on (set HIGH) selected pins on port A.
+        ; Other pins are preserved.
+        ;
+        ; Usage:
+        ;   lda #VIA::BIT::P7             ; pin(s) to turn on
+        ;   jsr VIA::porta_turn_on
+        ;
+        ; In:
+        ;   A = pin mask (1 = turn on this pin)
+        ; Out:
+        ;   A = clobbered
+
+        ora REG::PORTA
+        sta REG::PORTA
+        rts
+    .endproc
+
+    .proc porta_turn_off
+        ; Turn off (set LOW) selected pins on port A.
+        ; Other pins are preserved.
+        ;
+        ; Usage:
+        ;   lda #VIA::BIT::P7             ; pin(s) to turn off
+        ;   jsr VIA::porta_turn_off
+        ;
+        ; In:
+        ;   A = pin mask (1 = turn off this pin)
+        ; Out:
+        ;   A = clobbered
+
+        eor #$ff
+        and REG::PORTA
+        sta REG::PORTA
+        rts
+    .endproc
+
+    .proc portb_turn_on
+        ; Turn on (set HIGH) selected pins on port B.
+        ; Other pins are preserved.
+        ;
+        ; Usage:
+        ;   lda #VIA::BIT::P7             ; pin(s) to turn on
+        ;   jsr VIA::portb_turn_on
+        ;
+        ; In:
+        ;   A = pin mask (1 = turn on this pin)
+        ; Out:
+        ;   A = clobbered
+
+        ora REG::PORTB
+        sta REG::PORTB
+        rts
+    .endproc
+
+    .proc portb_turn_off
+        ; Turn off (set LOW) selected pins on port B.
+        ; Other pins are preserved.
+        ;
+        ; Usage:
+        ;   lda #VIA::BIT::P7             ; pin(s) to turn off
+        ;   jsr VIA::portb_turn_off
+        ;
+        ; In:
+        ;   A = pin mask (1 = turn off this pin)
+        ; Out:
+        ;   A = clobbered
+
+        eor #$ff
+        and REG::PORTB
+        sta REG::PORTB
+        rts
+    .endproc
+
+    .proc portb_set_pins
+        ; Set pin values on port B for a selected group of pins.
+        ; Pins not selected by the mask are preserved.
+        ;
+        ; Note: see porta_set_pins for details on intermediate state.
+        ;
+        ; Usage:
+        ;   lda #(VIA::BIT::P7 | VIA::BIT::P6)  ; mask: pins to update
+        ;   ldx #VIA::BIT::P7                    ; values: P7=1, P6=0
+        ;   jsr VIA::portb_set_pins
+        ;
+        ; In:
+        ;   A = pin mask (1 = update this pin, 0 = preserve)
+        ;   X = pin values (desired state for masked pins)
+        ; Out:
+        ;   A = clobbered
+        ;   X = preserved
+
+        eor #$ff            ; Invert mask to get preserve-mask
+        and REG::PORTB      ; A = preserved pin values (masked pins cleared)
+        sta REG::PORTB      ; Write with masked pins low (intermediate state)
+        txa                 ; A = desired pin values
+        ora REG::PORTB      ; Merge with preserved values
+        sta REG::PORTB      ; Write final result
+        rts
+    .endproc
+
     .proc portb_set_inputs
         ; Set data direction to input for the requested pins on port B. 
         ;

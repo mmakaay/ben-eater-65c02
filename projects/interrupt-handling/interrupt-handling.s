@@ -6,7 +6,7 @@
 
     hello: .asciiz "Press button!"
 
-.segment "VARIABLES"
+.segment "RAM"
 
     irq_counter:      .word 0
     last_irq_counter: .word 0
