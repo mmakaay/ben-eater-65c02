@@ -5,21 +5,22 @@
 .ifndef BIOS_S
 BIOS_S = 1
 
-; I use a 65C02, but let's keep the code compatible for 6502.
-; This is good for compatibility, but also for forced-upon
-; compatibility in cases where Ali Express vendors ship a 6502
-; CPU as a 65C02 :-/ (debugging BRA being skipped instead of
-; actually branching on 6502 was not that much fun).
+; I use a W65C02, but let's keep the code compatible for 6502. This
+; is good for compatibility, but also for forced-upon compatibility
+; in cases where a vendor ship an NMOS 6502 CPU, stamped as a W65C02.
+; (debugging BRA being skipped instead of actually branching on an
+; NMOS 6502 was not that much fun).
 .setcpu "6502"
 
 .include "macros/macros.s"
 .include "via_W65C22.s"
 .include "lcd_HD44780.s"
-.include "acia_UM6551.s"
+.include "uart.s"
 
 ; Prevent build warnings when a segment is not used in an application.
+.segment "STACK"
+.segment "RAM"
 .segment "DATA"
-.segment "VARIABLES"
 
 .scope BIOS
 
@@ -31,7 +32,7 @@ BIOS_S = 1
 
         jsr init_interrupts
         jsr LCD::init
-        jsr SERIAL::init
+        jsr UART::init
 
         jmp main  ; Note: `main` must be implemented by application
 
