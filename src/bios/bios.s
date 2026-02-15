@@ -1,5 +1,5 @@
 ; -----------------------------------------------------------------
-; BIOS for the Ben Eater breadboard computer
+; BIOS for my Ben Eater-style breadboard computer
 ; -----------------------------------------------------------------
 
 .ifndef BIOS_S
@@ -14,10 +14,10 @@ BIOS_S = 1
 
 .include "macros/macros.s"
 .include "via_W65C22.s"
-.include "lcd_HD44780.s"
+.include "lcd.s"
 .include "uart.s"
 
-; Prevent build warnings when a segment is not used in an application.
+; Prevent build warnings when a segment is not used in a project.
 .segment "STACK"
 .segment "RAM"
 .segment "DATA"

@@ -1,5 +1,5 @@
 ; -----------------------------------------------------------------
-; UART for RS232 serial communication
+; UART support for RS232 serial communication
 ; -----------------------------------------------------------------
 
 .ifndef BIOS_UART_S

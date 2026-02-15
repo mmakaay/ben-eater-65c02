@@ -1,5 +1,5 @@
 ; -----------------------------------------------------------------
-; HD44780 LCD (2 line display, 5x8 font)
+; HD44780 LCD (8 bit data bus, 2 line display, 5x8 font)
 ; -----------------------------------------------------------------
 
 .ifndef BIOS_LCD_HD44780_S
@@ -7,7 +7,7 @@ BIOS_LCD_HD44780_S = 1
 
 .include "bios/bios.s"
 
-.scope LCD
+.scope DRIVER
 
 .segment "BIOS"
 
@@ -210,3 +210,4 @@ BIOS_LCD_HD44780_S = 1
 .endif
 
 .endscope
+
