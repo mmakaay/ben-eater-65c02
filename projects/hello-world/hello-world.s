@@ -1,33 +1,16 @@
 .include "bios/bios.s"
 
-.segment "CODE"
+hello:
+    .asciiz "Hello, world!"
 
-    main:
-        jsr hello_world
-        jsr BIOS::halt
-
-    .proc hello_world
-        pha
-        txa
-        pha
-        ldx #0
-    @loop:
-        lda hello,x
-        beq @done
-        sta LCD::byte
-        jsr LCD::write_when_ready
-        inx
-        jmp @loop
-    @done:
-        pla
-        tax
-        pla
-        rts
-    .endproc
-
-
-.segment "DATA"
-
-    hello:
-        .asciiz "Hello, world!"
-
+main:
+    ldx #0                     ; Byte position to read from `hello`
+@loop:
+    lda hello,x                ; Read next byte
+    beq @done                  ; Stop at terminating null-byte
+    sta LCD::byte              ; Line the byte up for the LCD display
+    jsr LCD::write_when_ready  ; Wait for LCD display to be ready, and then send byte
+    inx                        ; Move to the next byte position
+    jmp @loop                  ; And repeat
+@done:
+    jmp BIOS::halt             ; Halt the computer
