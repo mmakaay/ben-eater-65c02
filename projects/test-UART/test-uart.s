@@ -11,15 +11,13 @@
 
 .include "bios/bios.s"
 
-.segment "DATA"
-
-    hello: .asciiz "Serial test"
-
 .segment "ZEROPAGE"
 
     cursor: .res 1  ; Current position on LCD line 1 (0-15)
 
 .segment "CODE"
+
+    hello: .asciiz "Serial test"
 
     .proc main
         jsr display_welcome_message
@@ -32,6 +30,7 @@
 
         ; Loop, until we see a byte in the receive buffer.
         jsr UART::check_rx
+        lda UART::byte
         beq @loop
 
         ; Wrap if cursor is at end of LCD line 1.
@@ -43,17 +42,17 @@
     @read:
         ; Read the incoming byte.
         jsr UART::read
-        pha                      ; Save received byte
 
         ; Position cursor, then display received byte on LCD line 1.
         jsr set_cursor_line1
-        pla                      ; Restore received byte
+        lda UART::byte
         sta LCD::byte
         jsr LCD::write_when_ready
         inc cursor
 
         ; Echo byte back via UART transmitter.
         lda LCD::byte
+        sta UART::byte
         jsr UART::write_when_ready
 
         jmp @loop
@@ -64,7 +63,7 @@
         ; Position cursor at start of LCD line 2.
         lda #$c0             ; Set DDRAM address = $40 (line 2)
         sta LCD::byte
-        jsr LCD::write_instruction_when_ready
+        jsr LCD::write_cmnd_when_ready
 
         ; Display "S:" prefix.
         lda #'S'
@@ -77,6 +76,7 @@
         ; Display 8 status bits, MSB first.
         ; Bit meaning: IRQ DSR DCD TXE RXF OVR FRM PAR
         jsr UART::load_status
+        lda UART::byte
         ldx #8
     @loop:
         ; Rotate MSB into carry, keeping all bits for next iteration.
@@ -99,7 +99,7 @@
         lda cursor          ; DDRAM address = $00 + cursor position
         ora #%10000000      ; Set DDRAM address command (bit 7)
         sta LCD::byte
-        jsr LCD::write_instruction_when_ready
+        jsr LCD::write_cmnd_when_ready
         pla
         rts
     .endproc

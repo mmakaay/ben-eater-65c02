@@ -13,7 +13,16 @@ BIOS_UART_UM6551_S = 1
 
     .include "bios/uart/6551_common.s"
 
+    ; The ZP byte is declared in the HAL (uart.s).
+    byte = UART::byte
+
     .proc init
+        pha
+        txa
+        pha
+        tya
+        pha
+
         jsr soft_reset
 
         ; Configure:
@@ -30,10 +39,21 @@ BIOS_UART_UM6551_S = 1
         ; - interrupts = none
         set_byte CMD_REGISTER, #(PAROFF | ECHOOFF | TIC2 | DTRON | IRQOFF)
 
+        pla
+        tay
+        pla
+        tax
+        pla
         rts
     .endproc
 
     .proc soft_reset
+        pha
+        txa
+        pha
+        tya
+        pha
+
         ; Soft reset by writing to the status register.
         clr_byte STATUS_REGISTER
 
@@ -50,33 +70,53 @@ BIOS_UART_UM6551_S = 1
         dex
         bne @wait
 
+        pla
+        tay
+        pla
+        tax
+        pla
         rts
     .endproc
 
     .proc load_status
+        pha
         lda STATUS_REGISTER
+        sta byte
+        pla
         rts
     .endproc
 
     .proc check_rx
+        pha
         lda STATUS_REGISTER
         and #RXFULL
+        sta byte
+        pla
         rts
     .endproc
 
     .proc check_tx
+        pha
         lda STATUS_REGISTER
         and #TXEMPTY
+        sta byte
+        pla
         rts
     .endproc
 
     .proc read
+        pha
         lda DATA_REGISTER
+        sta byte
+        pla
         rts
     .endproc
 
     .proc write
+        pha
+        lda byte
         sta DATA_REGISTER
+        pla
         rts
     .endproc
 
