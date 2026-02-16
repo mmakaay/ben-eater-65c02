@@ -13,8 +13,9 @@ BIOS_LCD_S = 1
 
 .scope LCD
 
-    ; Import the hardware driver.
-    .include "bios/lcd/hd44780_8bit.s"
+    ; Import the hardware driver (select one).
+    ;.include "bios/lcd/hd44780_8bit.s"
+    .include "bios/lcd/hd44780_4bit.s"
 
     ; Zero page parameter interface.
     byte = DRIVER::byte
@@ -114,6 +115,6 @@ BIOS_LCD_S = 1
         rts
     .endproc
 
-.endif
-
 .endscope
+
+.endif

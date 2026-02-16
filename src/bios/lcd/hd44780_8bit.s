@@ -1,7 +1,7 @@
 ; -----------------------------------------------------------------
-; HD44780 LCD (8 bit data bus, 2 line display, 5x8 font)
+; HD44780 LCD driver (8-bit data bus, 2 line display, 5x8 font)
 ;
-; Drives the LCD using an 8 bit data bus connection, with all
+; Drives the LCD using an 8-bit data bus connection, with all
 ; data bus pins connected to GPIO port B, and the control pins
 ; connected to 3 pins of GPIO port A.
 ;
@@ -29,26 +29,16 @@
 ;
 ; -----------------------------------------------------------------
 
-.ifndef BIOS_LCD_HD44780_S
-BIOS_LCD_HD44780_S = 1
+.ifndef BIOS_LCD_HD44780_8BIT_S
+BIOS_LCD_HD44780_8BIT_S = 1
 
 .include "bios/bios.s"
 
 .scope DRIVER
 
-.segment "ZEROPAGE"
-
-    byte: .res 1               ; Input byte for write / write_instruction
-
 .segment "BIOS"
 
-    ; Pin mapping LCD control pins -> GPIO port A.
-    PIN_EN  = GPIO::P7
-    PIN_RWB = GPIO::P6
-    PIN_RS  = GPIO::P5
-    PORTA_PINS = (PIN_EN | PIN_RWB | PIN_RS)
-
-    ; Pin mapping LCD data pins -> GPIO port B.
+    ; Pin mapping LCD data pins -> GPIO port B (all 8 pins).
     PORTB_PINS = %11111111
 
     .include "bios/lcd/hd44780_common.s"
@@ -56,8 +46,8 @@ BIOS_LCD_HD44780_S = 1
     .proc init
         ; Initialize all pins connected to the LCD in output mode.
         ;
-        ; Port A (CMND register) will always be in output mode from here on.
-        ; Port B (DATA register) will toggle input/output mode, depending on use.
+        ; Port A control pins will always be in output mode from here on.
+        ; Port B data pins will toggle input/output mode, depending on use.
         ;
         ; Out:
         ;   A, X, Y preserved
@@ -118,7 +108,7 @@ BIOS_LCD_HD44780_S = 1
 
         pha
 
-        ; Put the byte on the LCD data bus.
+        ; Put the full byte on the LCD data bus.
         lda #GPIO::PORTB
         sta GPIO::port
         lda byte
@@ -154,7 +144,7 @@ BIOS_LCD_HD44780_S = 1
 
         pha
 
-        ; Put the byte on the LCD data bus.
+        ; Put the full byte on the LCD data bus.
         lda #GPIO::PORTB
         sta GPIO::port
         lda byte
@@ -237,22 +227,7 @@ BIOS_LCD_HD44780_S = 1
         rts
     .endproc
 
-    .proc wait_till_ready
-        ; Wait for the LCD screen to be ready for the next input.
-        ;
-        ; Out:
-        ;   A, X, Y preserved
-
-        pha
-    @loop:
-        jsr check_ready
-        lda byte
-        bne @loop
-        pla
-        rts
-    .endproc
+.endscope
 
 .endif
-
-.endscope
 
