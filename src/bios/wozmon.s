@@ -44,7 +44,7 @@ BIOS_WOZMON_S = 1
 
 .scope WOZMON
 
-    .segment "ZEROPAGE"
+.segment "ZEROPAGE"
 
     XAML: .res 1                ; Last "opened" location Low
     XAMH: .res 1                ; Last "opened" location High
@@ -55,11 +55,11 @@ BIOS_WOZMON_S = 1
     YSAV: .res 1                ; Used to see if hex value is given
     MODE: .res 1                ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
 
-    .segment "RAM"
+.segment "RAM"
 
     IN: .res $FF                ; Input buffer
 
-    .segment "WOZMON"
+.segment "WOZMON"
 
     ; No hardware initialization required like the original, since
     ; the BIOS initialization already set up the hardware for us.

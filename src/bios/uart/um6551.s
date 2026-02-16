@@ -7,9 +7,9 @@ BIOS_UART_UM6551_S = 1
 
 .include "bios/bios.s"
 
-.segment "BIOS"
-
 .scope DRIVER
+
+.segment "BIOS"
 
     .include "bios/uart/6551_common.s"
 

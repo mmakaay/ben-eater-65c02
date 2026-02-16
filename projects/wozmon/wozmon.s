@@ -1,5 +1,4 @@
-; This can also go in config.s, to let the BIOS always include wozmon.
-INCLUDE_WOZMON = 1
+INCLUDE_WOZMON = YES
 
 .include "bios/bios.s"
 
@@ -9,6 +8,9 @@ lcd_text:     .asciiz "Running WozMon"
 console_text: .byte   $0d, $0d, "Welcome to WozMon", $0d, $00
 
 main:
+
+; This code will also work, when LCD support is excluded.
+.ifdef HAS_LCD
     ldx #0
 @send_lcd_text:
     lda lcd_text,x
@@ -18,6 +20,7 @@ main:
     inx
     jmp @send_lcd_text
 @done:
+.endif
 
     ldx #0
 @send_console_text:

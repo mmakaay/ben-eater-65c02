@@ -4,6 +4,25 @@
 ; are defined in bios/constants.s, which is loaded before this
 ; file. See that file for the full list of available names.
 
+; --------------------------------------------------------------------
+; WozMon
+;
+; An adapted version of WozMon, including some bugfixes, and fitting
+; in the original Apple II WozMon address space $FF00 - $FFF9.
+; --------------------------------------------------------------------
+
+INCLUDE_WOZMON = YES
+
+; --------------------------------------------------------------------
+; UART for serial communication
+;
+; Since nobody ever seems to be using anything else than the typical
+; N-8-1 configuration (no parity, word length 8, 1 stop bit), only
+; the baud rate is configurable here.
+; --------------------------------------------------------------------
+
+INCLUDE_UART = YES
+UART_BAUD_RATE = BAUD19200
 
 ; --------------------------------------------------------------------
 ; LCD display
@@ -15,6 +34,8 @@
 ; To use a different setup, uncomment one of the presets below
 ; or write your own.
 ; --------------------------------------------------------------------
+
+INCLUDE_LCD = YES
 
 ; Preset: Ben Eater wiring, 4-bit mode
 ;

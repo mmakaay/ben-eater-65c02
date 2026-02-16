@@ -26,12 +26,11 @@ BIOS_UART_S = 1
     ; Import the hardware driver.
     .include "bios/uart/um6551.s"
 
-    ; Zero page parameter interface.
-    .segment "ZEROPAGE"
+.segment "ZEROPAGE"
 
     byte: .res 1               ; Input/output byte for read/write
 
-    .segment "BIOS"
+.segment "BIOS"
 
     ; -------------------------------------------------------------
     ; Low level driver API (no waiting)

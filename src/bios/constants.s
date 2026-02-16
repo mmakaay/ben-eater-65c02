@@ -17,10 +17,20 @@
 .ifndef CONSTANTS_S
 CONSTANTS_S = 1
 
-; --- LCD driver selection -------------------------------------------
+; --- Driver selection -----------------------------------------------
 
-HD44780_8BIT = 1              ; HD44780, 8-bit data bus
-HD44780_4BIT = 2              ; HD44780, 4-bit data bus
+; LCD
+HD44780_8BIT = 1      ; HD44780, 8-bit data bus
+HD44780_4BIT = 2      ; HD44780, 4-bit data bus
+
+; UART
+um6551       = 3      ; UM6551, only with RXFULL/TXEMPTY polling
+um6551_irq   = 4      ; UM6551, using IRQ, buffering and flow control
+
+; --- Booleans ------------------------------------------------------
+
+NO  = 0
+YES = 1
 
 ; --- I/O port selection ---------------------------------------------
 

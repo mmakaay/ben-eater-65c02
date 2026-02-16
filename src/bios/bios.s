@@ -12,8 +12,6 @@ BIOS_S = 1
 ; NMOS 6502 was not that much fun).
 .setcpu "6502"
 
-.segment "BIOS"
-
 ; Include general purpose macros, that make it easier to write some
 ; often used code fragments.
 .include "macros/macros.s"
@@ -25,24 +23,38 @@ BIOS_S = 1
 ; Include the Hardware Abstraction Layer (HAL) and hardware drivers.
 .include "bios/io/w65c22.s"
 .include "bios/gpio.s"
-.include "bios/lcd.s"
-.include "bios/uart.s"
+.if .defined(INCLUDE_LCD) .and INCLUDE_LCD
+    HAS_LCD = YES
+    .include "bios/lcd.s"
+.endif
+.if .defined(INCLUDE_UART) .and INCLUDE_UART
+    .include "bios/uart.s"
+    HAS_UART = YES
+.endif
 
 ; WozMon.
-.ifdef INCLUDE_WOZMON
+.if .defined(INCLUDE_WOZMON) .and INCLUDE_WOZMON <> NO
+    .ifndef HAS_UART
+        .error "WoZMon cannot be enabled without UART support"
+    .endif
     .include "bios/wozmon.s"
-    .segment "BIOS" ; Segment is set to "WOZMON" by the include.
 .endif
 
 .scope BIOS
+
+.segment "BIOS"
 
     boot:
         ldx #$ff  ; Initialize stack pointer
         txs
 
         jsr init_interrupts
-        jsr LCD::init
-        jsr UART::init
+        .ifdef HAS_LCD
+            jsr LCD::init
+        .endif
+        .ifdef HAS_UART
+            jsr UART::init
+        .endif
 
         jmp main  ; Note: `main` must be implemented by application
 

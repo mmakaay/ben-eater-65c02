@@ -34,11 +34,11 @@ BIOS_LCD_S = 1
         .error "LCD_DRIVER invalid (see bios/constants.s for options)"
     .endif
 
-    .segment "ZEROPAGE"
+.segment "ZEROPAGE"
 
     byte: .res 1 ; Input byte for write / write_cmnd
 
-    .segment "BIOS"
+.segment "BIOS"
 
     ; -------------------------------------------------------------
     ; Access to the low level driver API

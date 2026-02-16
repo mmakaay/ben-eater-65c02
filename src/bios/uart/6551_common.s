@@ -114,6 +114,5 @@ B19200     = %00001111       ; Baud rate 19200
     .error "UART_BAUD_RATE invalid for UM6551 ACIA"
 .endif
 
-
 .endif
 
