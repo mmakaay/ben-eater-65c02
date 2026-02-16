@@ -139,11 +139,11 @@ BIOS_LCD_HD44780_4BIT_S = 1
         ; --- Now in 4-bit mode. Commands sent as two nibbles. ---
 
         set_byte byte, #%00101000   ; 4-bit mode, 2 line display, 5x8 font
-        jsr write_instruction_when_ready
+        jsr write_cmnd_when_ready
         set_byte byte, #%00001110   ; Turn display on, cursor on, blink off
-        jsr write_instruction_when_ready
+        jsr write_cmnd_when_ready
         set_byte byte, #%00000110   ; Shift cursor on data, no display shift
-        jsr write_instruction_when_ready
+        jsr write_cmnd_when_ready
 
         ; Clear the screen.
         jsr clr
@@ -156,7 +156,7 @@ BIOS_LCD_HD44780_4BIT_S = 1
         rts
     .endproc
 
-    .proc write_instruction
+    .proc write_cmnd
         ; Write instruction to CMND register (two nibbles).
         ;
         ; In (zero page):

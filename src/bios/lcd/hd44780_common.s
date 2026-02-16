@@ -54,7 +54,7 @@ BIOS_LCD_HD44780_COMMON_S = 1
 
         pha
         set_byte byte, #%00000001   ; Clear screen, set address to 0
-        jsr write_instruction_when_ready
+        jsr write_cmnd_when_ready
         pla
         rts
     .endproc
@@ -67,7 +67,7 @@ BIOS_LCD_HD44780_COMMON_S = 1
 
         pha
         set_byte byte, #%00000010   ; Move cursor to home position
-        jsr write_instruction_when_ready
+        jsr write_cmnd_when_ready
         pla
         rts
     .endproc

@@ -36,7 +36,7 @@ BIOS_LCD_S = 1
 
     .segment "ZEROPAGE"
 
-    byte: .res 1 ; Input byte for write / write_instruction
+    byte: .res 1 ; Input byte for write / write_cmnd
 
     .segment "BIOS"
 
@@ -58,7 +58,7 @@ BIOS_LCD_S = 1
         ;   LCD::byte != 0 if the LCD is busy
         ;   A, X, Y preserved
 
-    write_instruction = DRIVER::write_instruction
+    write_cmnd = DRIVER::write_cmnd
         ; Write instruction to CMND register.
         ;
         ; In (zero page):
@@ -90,7 +90,7 @@ BIOS_LCD_S = 1
     ; High level convenience wrappers.
     ; -------------------------------------------------------------
 
-    .proc write_instruction_when_ready
+    .proc write_cmnd_when_ready
         ; Wait for LCD to become ready, then write instruction to
         ; CMND register.
         ;
@@ -108,7 +108,7 @@ BIOS_LCD_S = 1
         bne @wait
         pla                        ; Restore the instruction byte
         sta byte
-        jsr write_instruction
+        jsr write_cmnd
         pla
         rts
     .endproc
