@@ -76,6 +76,7 @@ BIOS_UART_S = 1
         ;
         ; Out:
         ;   A = read byte
+        ;   X, Y = preserved
 
         pha
     @wait_for_rx:
@@ -93,6 +94,7 @@ BIOS_UART_S = 1
         ;   A = the byte to write
         ; Out:
         ;   A = clobbered
+        ;   X, Y = preserved
 
         pha
     @wait_for_tx:

@@ -4,11 +4,15 @@ help:
 # Build ROM from invocation directory
 build:
     #!/bin/bash
+    echo "Building rom.bin ..."
     cd "{{invocation_directory()}}"
     ca65 --include-dir "{{justfile_directory()}}/src/" *.s
     ld65 --config "{{justfile_directory()}}/src/breadboard.cfg" *.o -o rom.bin
 
-# Write ROM from invocation directory to EEPROM
+dump:
+    hexdump -C "{{invocation_directory()}}/rom.bin"
+
+# Build and write ROM from invocation directory to EEPROM
 write:
     #!/bin/bash
     cd "{{invocation_directory()}}"
