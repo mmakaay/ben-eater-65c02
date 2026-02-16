@@ -6,7 +6,7 @@ INCLUDE_WOZMON = 1
 .import __WOZMON_START__
 
 lcd_text:     .asciiz "Running WozMon"
-console_text: .byte   "Welcome to WozMon", $0d, $00
+console_text: .byte   $0d, $0d, "Welcome to WozMon", $0d, $00
 
 main:
     ldx #0

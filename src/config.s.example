@@ -4,9 +4,9 @@
 ; are defined in bios/constants.s, which is loaded before this
 ; file. See that file for the full list of available names.
 
+
 ; --------------------------------------------------------------------
 ; LCD display
-; --------------------------------------------------------------------
 ;
 ; The defaults (no config needed) match Ben Eater's tutorial:
 ; 8-bit data bus on port B, command pins on port A (PA5-PA7).
@@ -14,7 +14,6 @@
 ;
 ; To use a different setup, uncomment one of the presets below
 ; or write your own.
-;
 ; --------------------------------------------------------------------
 
 ; Preset: Ben Eater wiring, 4-bit mode
