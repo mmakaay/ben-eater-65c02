@@ -12,16 +12,12 @@ BIOS_S = 1
 ; NMOS 6502 was not that much fun).
 .setcpu "6502"
 
+.include "config.s"
 .include "macros/macros.s"
 .include "io/w65c22.s"
 .include "gpio.s"
 .include "lcd.s"
 .include "uart.s"
-
-; Prevent build warnings when a segment is not used in a project.
-.segment "STACK"
-.segment "RAM"
-.segment "DATA"
 
 .scope BIOS
 
@@ -89,5 +85,13 @@ BIOS_S = 1
     .word dispatch_irq         ; IRQ vector
 
 .endscope
+
+; Prevent build warnings when a segment is not used in a project.
+.segment "STACK"
+.segment "RAM"
+.segment "DATA"
+
+; Make sure that code without segment after including this uses CODE.
+.segment "CODE"
 
 .endif

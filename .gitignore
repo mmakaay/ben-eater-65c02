@@ -4,3 +4,4 @@
 **/*.sw?
 /cc65
 /emulator
+/src/config.s

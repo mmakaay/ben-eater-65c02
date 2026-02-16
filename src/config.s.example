@@ -1,0 +1,26 @@
+; ----------------------------------------------------------------------
+; LCD display configuration
+; ----------------------------------------------------------------------
+
+; The default configuration matches Ben Eater's tutorial configuration,
+; with CMND bus on VIA port A (pins PA5, PA6 and PA7) and DATA bus on
+; VIA port B (pins PB0 - PB7). Uncomment one of the configurations
+; below, or write your own, to use a different setup.
+
+; This configuration matches Ben Eater's default pin configuration.
+; The difference is that this one uses 4-bit data bus mode.
+; After activating this configuration, it is possible to disonnect
+; wires PB4 - PB7, while still having a working LCD display.
+
+;LCD_MODE = 4               ; 4-bit data bus mode
+;LCD_CMND_PORT = 1          ; Port A
+;LCD_DATA_PORT = 0          ; Port B
+;LCD_PIN_RS    = %00100000 ; pin bitmask for Register Select (PA5)
+;LCD_PIN_RWB   = %01000000 ; pin bitmask for Read/Write (PA6)
+;LCD_PIN_EN    = %10000000 ; pin bitmask for Enable (PA7)
+
+; This configuration has both the DATA bus and the CMND bus on
+; VIA port B, running in 4 bit mode (CMND pins on PB0 - PB2,
+; DATA pins on PB4 - PB7, and PB3 free for other use).
+
+;LCD_MODE = 4
