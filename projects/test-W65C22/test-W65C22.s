@@ -10,7 +10,6 @@ PORTA_DIR = $6003
 ; layout, but that are not used in this minimal application.
 .segment "ZEROPAGE"
 .segment "BIOS"
-.segment "DATA"
 .segment "VARIABLES"
 
 .segment "CODE"

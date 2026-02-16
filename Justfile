@@ -12,6 +12,9 @@ build:
 dump:
     hexdump -C "{{invocation_directory()}}/rom.bin"
 
+dis:
+    da65 --cpu 6502 "{{invocation_directory()}}/rom.bin"
+
 # Build and write ROM from invocation directory to EEPROM
 write:
     #!/bin/bash

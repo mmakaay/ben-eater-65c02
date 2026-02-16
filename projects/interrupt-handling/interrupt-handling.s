@@ -2,16 +2,14 @@
 .include "stdlib/divmod16.s"
 .include "stdlib/fmtdec16.s"
 
-.segment "DATA"
-
-    hello: .asciiz "Press button!"
-
 .segment "RAM"
 
     irq_counter:      .word 0
     last_irq_counter: .word 0
 
 .segment "CODE"
+
+    hello: .asciiz "Press button!"
 
     main:
         ; Initialize the IRQ counters

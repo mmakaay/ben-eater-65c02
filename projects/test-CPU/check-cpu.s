@@ -16,12 +16,10 @@
 
     ptr: .res 2
 
-.segment "DATA"
+.segment "CODE"
 
     msg_6502:  .asciiz "CPU: NMOS 6502"
     msg_65c02: .asciiz "CPU: CMOS 65C02"
-
-.segment "CODE"
 
     main:
         ; Detect CPU type using decimal mode Z flag behavior.
