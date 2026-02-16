@@ -3,10 +3,13 @@
 ;
 ; Implements GPIO operations using absolute,Y addressing on the
 ; VIA port registers. Since PORTA = PORTB + 1 and DDRA = DDRB + 1,
-; the Y register selects the port:
+; an internal Y register value selects the port:
 ;
 ;   Y = 0 -> port B
 ;   Y = 1 -> port A
+;
+; Parameters are passed via zero page variables (GPIO::port,
+; GPIO::mask, GPIO::value). All procedures preserve A, X, Y.
 ;
 ; -----------------------------------------------------------------
 
@@ -19,36 +22,58 @@ BIOS_GPIO_VIA_W65C22_S = 1
 
 .segment "ZEROPAGE"
 
-    tmp_byte: .res 1
+    port:  .res 1              ; Port selector (GPIO::PORTA or GPIO::PORTB)
+    mask:  .res 1              ; Pin mask (meaning depends on procedure)
+    value: .res 1              ; Pin values / data byte
 
 .segment "BIOS"
 
     .proc set_inputs
         ; Set data direction to input for the requested pins.
         ;
-        ; In:
-        ;   A = pin mask (1 = set to input)
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::mask = pin mask (1 = set to input)
+        ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = clobbered
+        ;   A, X, Y preserved
 
+        pha
+        tya
+        pha
+
+        ldy port
+        lda mask
         eor #$ff
         and VIA::DDRB_REGISTER,Y
         sta VIA::DDRB_REGISTER,Y
+
+        pla
+        tay
+        pla
         rts
     .endproc
 
     .proc set_outputs
         ; Set data direction to output for the requested pins.
         ;
-        ; In:
-        ;   A = pin mask (1 = set to output)
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::mask = pin mask (1 = set to output)
+        ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = clobbered
+        ;   A, X, Y preserved
 
+        pha
+        tya
+        pha
+
+        ldy port
+        lda mask
         ora VIA::DDRB_REGISTER,Y
         sta VIA::DDRB_REGISTER,Y
+
+        pla
+        tay
+        pla
         rts
     .endproc
 
@@ -56,20 +81,27 @@ BIOS_GPIO_VIA_W65C22_S = 1
         ; Set pin values for a selected group of pins.
         ; Pins not selected by the mask are preserved.
         ;
-        ; In:
-        ;   A = pin mask (1 = update this pin, 0 = preserve)
-        ;   X = pin values (desired state for pins to update)
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::mask  = pin mask (1 = update this pin, 0 = preserve)
+        ;   GPIO::value = pin values (desired state for masked pins)
+        ;   GPIO::port  = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = clobbered
-        ;   X = preserved
-        ;   Y = preserved
+        ;   A, X, Y preserved
 
+        pha
+        tya
+        pha
+
+        ldy port
+        lda mask
         eor #$ff                    ; Invert mask to get preserve-mask
         and VIA::PORTB_REGISTER,Y   ; A = preserved pin values
-        stx tmp_byte                ; Save desired values temporarily
-        ora tmp_byte                ; Merge preserved values with desired pin values
+        ora value                   ; Merge with desired pin values
         sta VIA::PORTB_REGISTER,Y   ; Write final result
+
+        pla
+        tay
+        pla
         rts
     .endproc
 
@@ -77,15 +109,24 @@ BIOS_GPIO_VIA_W65C22_S = 1
         ; Turn on (set HIGH) selected pins.
         ; Other pins are preserved.
         ;
-        ; In:
-        ;   A = pin mask (1 = turn on this pin)
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::mask = pin mask (1 = turn on this pin)
+        ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = clobbered
-        ;   Y = preserved
+        ;   A, X, Y preserved
 
+        pha
+        tya
+        pha
+
+        ldy port
+        lda mask
         ora VIA::PORTB_REGISTER,Y
         sta VIA::PORTB_REGISTER,Y
+
+        pla
+        tay
+        pla
         rts
     .endproc
 
@@ -93,43 +134,71 @@ BIOS_GPIO_VIA_W65C22_S = 1
         ; Turn off (set LOW) selected pins.
         ; Other pins are preserved.
         ;
-        ; In:
-        ;   A = pin mask (1 = turn off this pin)
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::mask = pin mask (1 = turn off this pin)
+        ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = clobbered
-        ;   Y = preserved
+        ;   A, X, Y preserved
 
+        pha
+        tya
+        pha
+
+        ldy port
+        lda mask
         eor #$ff
         and VIA::PORTB_REGISTER,Y
         sta VIA::PORTB_REGISTER,Y
+
+        pla
+        tay
+        pla
         rts
     .endproc
 
     .proc write_port
         ; Write a full byte to the port register.
         ;
-        ; In:
-        ;   A = byte to write
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::value = byte to write
+        ;   GPIO::port  = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = preserved
-        ;   Y = preserved
+        ;   A, X, Y preserved
 
+        pha
+        tya
+        pha
+
+        ldy port
+        lda value
         sta VIA::PORTB_REGISTER,Y
+
+        pla
+        tay
+        pla
         rts
     .endproc
 
     .proc read_port
         ; Read a full byte from the port register.
         ;
-        ; In:
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = byte read
-        ;   Y = preserved
+        ;   GPIO::value = byte read
+        ;   A, X, Y preserved
 
+        pha
+        tya
+        pha
+
+        ldy port
         lda VIA::PORTB_REGISTER,Y
+        sta value
+
+        pla
+        tay
+        pla
         rts
     .endproc
 

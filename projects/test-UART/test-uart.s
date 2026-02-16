@@ -43,13 +43,17 @@
     @read:
         ; Read the incoming byte.
         jsr UART::read
+        pha                      ; Save received byte
 
-        ; Display received byte on LCD line 1.
+        ; Position cursor, then display received byte on LCD line 1.
         jsr set_cursor_line1
+        pla                      ; Restore received byte
+        sta LCD::byte
         jsr LCD::write_when_ready
         inc cursor
 
         ; Echo byte back via UART transmitter.
+        lda LCD::byte
         jsr UART::write_when_ready
 
         jmp @loop
@@ -58,13 +62,16 @@
     ; Show the UART status register bits on LCD line 2.
     .proc show_status
         ; Position cursor at start of LCD line 2.
-        lda #$c0 ; Set DDRAM address = $40 (line 2)
+        lda #$c0             ; Set DDRAM address = $40 (line 2)
+        sta LCD::byte
         jsr LCD::write_instruction_when_ready
 
         ; Display "S:" prefix.
         lda #'S'
+        sta LCD::byte
         jsr LCD::write_when_ready
         lda #':'
+        sta LCD::byte
         jsr LCD::write_when_ready
 
         ; Display 8 status bits, MSB first.
@@ -77,6 +84,7 @@
         pha
         lda #'0'
         adc #0              ; '0' + carry = '0' or '1'
+        sta LCD::byte
         jsr LCD::write_when_ready
         pla
         dex
@@ -90,6 +98,7 @@
         pha
         lda cursor          ; DDRAM address = $00 + cursor position
         ora #%10000000      ; Set DDRAM address command (bit 7)
+        sta LCD::byte
         jsr LCD::write_instruction_when_ready
         pla
         rts
@@ -99,9 +108,10 @@
     .proc clear_line1
         pha
         jsr LCD::home
+        lda #' '
+        sta LCD::byte
         ldx #16
     @loop:
-        lda #' '
         jsr LCD::write_when_ready
         dex
         bne @loop
@@ -116,6 +126,7 @@
     @loop:
         lda hello,x
         beq @done
+        sta LCD::byte
         jsr LCD::write_when_ready
         inx
         jmp @loop

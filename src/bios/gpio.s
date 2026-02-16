@@ -1,5 +1,14 @@
 ; -----------------------------------------------------------------
 ; GPIO (General Purpose I/O) abstraction
+;
+; Parameters are passed via zero page variables:
+;
+;   GPIO::port  = port selector (GPIO::PORTA or GPIO::PORTB)
+;   GPIO::mask  = pin mask (meaning depends on procedure)
+;   GPIO::value = pin values / data byte
+;
+; All procedures preserve A, X, Y.
+;
 ; -----------------------------------------------------------------
 
 .ifndef BIOS_GPIO_S
@@ -9,12 +18,10 @@ BIOS_GPIO_S = 1
 
 .scope GPIO
 
-.segment "BIOS"
-
     ; Import the hardware driver.
     .include "bios/gpio/via_W65C22.s"
 
-    ; Port selection constants (Y register values).
+    ; Port selection constants.
     PORTA = 1
     PORTB = 0
 
@@ -28,6 +35,11 @@ BIOS_GPIO_S = 1
     P6 = %01000000
     P7 = %10000000
 
+    ; Zero page parameter interface.
+    port  = DRIVER::port
+    mask  = DRIVER::mask
+    value = DRIVER::value
+
     ; -------------------------------------------------------------
     ; Access to the low level driver API
     ; -------------------------------------------------------------
@@ -35,74 +47,69 @@ BIOS_GPIO_S = 1
     set_inputs = DRIVER::set_inputs
         ; Set data direction to input for the requested pins.
         ;
-        ; In:
-        ;   A = pin mask (1 = set to input)
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::mask = pin mask (1 = set to input)
+        ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = clobbered
+        ;   A, X, Y preserved
 
     set_outputs = DRIVER::set_outputs
         ; Set data direction to output for the requested pins.
         ;
-        ; In:
-        ;   A = pin mask (1 = set to output)
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::mask = pin mask (1 = set to output)
+        ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = clobbered
+        ;   A, X, Y preserved
 
     set_pins = DRIVER::set_pins
         ; Set pin values for a selected group of pins.
         ; Pins not selected by the mask are preserved.
         ;
-        ; In:
-        ;   A = pin mask (1 = update this pin, 0 = preserve)
-        ;   X = pin values (desired state for pins to update)
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::mask  = pin mask (1 = update this pin, 0 = preserve)
+        ;   GPIO::value = pin values (desired state for masked pins)
+        ;   GPIO::port  = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = clobbered
-        ;   X = preserved
-        ;   Y = preserved
+        ;   A, X, Y preserved
 
     turn_on = DRIVER::turn_on
         ; Turn on (set HIGH) selected pins.
         ; Other pins are preserved.
         ;
-        ; In:
-        ;   A = pin mask (1 = turn on this pin)
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::mask = pin mask (1 = turn on this pin)
+        ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = clobbered
-        ;   Y = preserved
+        ;   A, X, Y preserved
 
     turn_off = DRIVER::turn_off
         ; Turn off (set LOW) selected pins.
         ; Other pins are preserved.
         ;
-        ; In:
-        ;   A = pin mask (1 = turn off this pin)
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::mask = pin mask (1 = turn off this pin)
+        ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = clobbered
-        ;   Y = preserved
+        ;   A, X, Y preserved
 
     write_port = DRIVER::write_port
         ; Write a full byte to the port register.
         ;
-        ; In:
-        ;   A = byte to write
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::value = byte to write
+        ;   GPIO::port  = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = preserved
-        ;   Y = preserved
+        ;   A, X, Y preserved
 
     read_port = DRIVER::read_port
         ; Read a full byte from the port register.
         ;
-        ; In:
-        ;   Y = port (GPIO::PORTA or GPIO::PORTB)
+        ; In (zero page):
+        ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
         ; Out:
-        ;   A = byte read
-        ;   Y = preserved
+        ;   GPIO::value = byte read
+        ;   A, X, Y preserved
 
 .endscope
 

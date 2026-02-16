@@ -51,6 +51,7 @@
     @loop:
         lda (ptr),y
         beq @done
+        sta LCD::byte
         jsr LCD::write_when_ready
         iny
         bne @loop       ; branch always (message < 256 bytes)

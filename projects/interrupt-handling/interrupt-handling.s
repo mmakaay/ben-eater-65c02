@@ -72,6 +72,7 @@
         beq @done
         dey
         lda Regs::str,y
+        sta LCD::byte
         jsr LCD::write_when_ready
         jmp @loop
     @done:
@@ -86,6 +87,7 @@
     @loop:
         lda hello,x
         beq @done
+        sta LCD::byte
         jsr LCD::write_when_ready
         inx
         jmp @loop
