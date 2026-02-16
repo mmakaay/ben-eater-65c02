@@ -27,7 +27,7 @@ BIOS_GPIO_S = 1
 .segment "BIOS"
 
     ; Import the hardware driver.
-    .include "bios/gpio/via_W65C22.s"
+    .include "bios/gpio/via_w65c22.s"
 
     ; Port selection constants.
     PORTA = 1

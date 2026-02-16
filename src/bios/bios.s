@@ -13,7 +13,7 @@ BIOS_S = 1
 .setcpu "6502"
 
 .include "macros/macros.s"
-.include "via_W65C22.s"
+.include "io/w65c22.s"
 .include "gpio.s"
 .include "lcd.s"
 .include "uart.s"
