@@ -162,7 +162,7 @@ BIOS_LCD_HD44780_4BIT_S = 1
         jsr GPIO::set_pins
 
         ; Send byte as two nibbles.
-        jsr send_byte
+        jsr _send_byte
 
         pla
         rts

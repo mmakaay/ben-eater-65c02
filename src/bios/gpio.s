@@ -18,6 +18,14 @@ BIOS_GPIO_S = 1
 
 .scope GPIO
 
+.segment "ZEROPAGE"
+
+    port:  .res 1              ; Port selector (GPIO::PORTA or GPIO::PORTB)
+    mask:  .res 1              ; Pin mask (meaning depends on procedure)
+    value: .res 1              ; Pin values / data byte
+
+.segment "BIOS"
+
     ; Import the hardware driver.
     .include "bios/gpio/via_W65C22.s"
 
@@ -34,11 +42,6 @@ BIOS_GPIO_S = 1
     P5 = %00100000
     P6 = %01000000
     P7 = %10000000
-
-    ; Zero page parameter interface.
-    port  = DRIVER::port
-    mask  = DRIVER::mask
-    value = DRIVER::value
 
     ; -------------------------------------------------------------
     ; Access to the low level driver API

@@ -20,12 +20,6 @@ BIOS_GPIO_VIA_W65C22_S = 1
 
 .scope DRIVER
 
-.segment "ZEROPAGE"
-
-    port:  .res 1              ; Port selector (GPIO::PORTA or GPIO::PORTB)
-    mask:  .res 1              ; Pin mask (meaning depends on procedure)
-    value: .res 1              ; Pin values / data byte
-
 .segment "BIOS"
 
     .proc set_inputs
