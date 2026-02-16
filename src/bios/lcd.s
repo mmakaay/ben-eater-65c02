@@ -4,6 +4,20 @@
 ; Parameters are passed via zero page: LCD::byte.
 ; All procedures preserve A, X, Y.
 ;
+; Configuration
+; -------------
+; Define these constants before including bios.s to override defaults.
+;
+;   LCD_MODE      = 4 or 8 (default: 8)
+;   LCD_CMND_PORT = GPIO port for control pins (0=PORTB, 1=PORTA)
+;   LCD_DATA_PORT = GPIO port for data pins (0=PORTB, 1=PORTA)
+;   LCD_PIN_RS    = pin bitmask for Register Select
+;   LCD_PIN_RWB   = pin bitmask for Read/Write
+;   LCD_PIN_EN    = pin bitmask for Enable
+;
+; Each driver provides its own defaults. See hd44780_4bit.s and
+; hd44780_8bit.s for the default pin layouts.
+;
 ; -----------------------------------------------------------------
 
 .ifndef BIOS_LCD_S
@@ -11,11 +25,26 @@ BIOS_LCD_S = 1
 
 .include "bios/bios.s"
 
+; Select the hardware driver.
+.ifndef LCD_MODE
+    LCD_MODE = 8
+.endif
+
+.if LCD_MODE - 8 = 0
+    LCD_DRIVER_8BIT = 1
+.elseif LCD_MODE - 4 = 0
+    LCD_DRIVER_4BIT = 1
+.else
+    .error "LCD_MODE must be 4 or 8"
+.endif
+
 .scope LCD
 
-    ; Import the hardware driver (select one).
-    ;.include "bios/lcd/hd44780_8bit.s"
-    .include "bios/lcd/hd44780_4bit.s"
+    .ifdef LCD_DRIVER_8BIT
+        .include "bios/lcd/hd44780_8bit.s"
+    .else
+        .include "bios/lcd/hd44780_4bit.s"
+    .endif
 
     ; Zero page parameter interface.
     byte = DRIVER::byte

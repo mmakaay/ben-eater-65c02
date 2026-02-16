@@ -5,6 +5,10 @@
 ; Provides the zero page parameter, control pin constants,
 ; the busy flag constant, and common procedures.
 ;
+; The including driver must define LCD_PIN_EN, LCD_PIN_RWB,
+; LCD_PIN_RS (with .ifndef-guarded defaults) before including
+; this file.
+;
 ; -----------------------------------------------------------------
 
 .ifndef BIOS_LCD_HD44780_COMMON_S
@@ -18,11 +22,11 @@ BIOS_LCD_HD44780_COMMON_S = 1
 
 .segment "BIOS"
 
-    ; Pin mapping LCD control pins -> GPIO port A.
-    PIN_EN  = GPIO::P7
-    PIN_RWB = GPIO::P6
-    PIN_RS  = GPIO::P5
-    PORTA_PINS = (PIN_EN | PIN_RWB | PIN_RS)
+    ; LCD control pin mapping (derived from LCD_* configuration).
+    PIN_EN  = LCD_PIN_EN
+    PIN_RWB = LCD_PIN_RWB
+    PIN_RS  = LCD_PIN_RS
+    CMND_PINS = (PIN_EN | PIN_RWB | PIN_RS)
 
     ; From the datasheet:
     ; When the busy flag is 1, the device is in the internal operation

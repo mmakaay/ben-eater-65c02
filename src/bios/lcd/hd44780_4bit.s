@@ -1,31 +1,30 @@
 ; -----------------------------------------------------------------
 ; HD44780 LCD driver (4-bit data bus, 2 line display, 5x8 font)
 ;
-; Drives the LCD using a 4-bit data bus connection, with the
-; upper 4 data bus pins connected to the upper 4 pins of GPIO
-; port B, and the control pins connected to 3 pins of GPIO
-; port A. This leaves PB0-PB3 available for other hardware.
+; Drives the LCD using a 4-bit data bus connection. Each byte is
+; transferred as two nibbles (high nibble first). Data writes use
+; pin masking to preserve non-LCD pins on shared ports.
 ;
-; Each byte is transferred as two nibbles (high nibble first).
-; Data writes use pin masking to preserve PB0-PB3.
+; Pin configuration
+; -----------------
+; All pins are configurable via LCD_* constants defined before
+; including bios.s. Command and data pins can be on the same or
+; different ports. The default layout uses a single port (port B),
+; leaving PB3 free for other hardware:
 ;
 ;    HD44780 LCD                           GPIO
 ;    ┌─────────┐                          ┌─────────┐
 ;    │         │                          │         │
-;    │         │                     n/c──┤ PA*     │
-;    │  RS     │◄─────────────────────────┤ PA5     │ (PIN_RS)
-;    │  RWB    │◄─────────────────────────┤ PA6     │ (PIN_RWB)
-;    │  E      │◄─────────────────────────┤ PA7     │ (PIN_EN)
-;    │         │                          │         │
-;    │  D0     │         n/c              │         │
-;    │  D1     │         n/c              │         │
-;    │  D2     │         n/c              │         │
-;    │  D3     │         n/c              │         │
+;    │  RS     │◄─────────────────────────┤ PB0     │ (PIN_RS)
+;    │  RWB    │◄─────────────────────────┤ PB1     │ (PIN_RWB)
+;    │  E      │◄─────────────────────────┤ PB2     │ (PIN_EN)
+;    │         │                     free─┤ PB3     │
 ;    │  D4     │◄────────────────────────►│ PB4     │
 ;    │  D5     │◄────────────────────────►│ PB5     │
 ;    │  D6     │◄────────────────────────►│ PB6     │
 ;    │  D7     │◄────────────────────────►│ PB7     │
-;    │         │                     n/c──┤ PB0-3   │
+;    │         │                          │         │
+;    │  D0-D3  │         n/c              │  PA*    │ (free)
 ;    │         │                          │         │
 ;    └─────────┘                          └─────────┘
 ;
@@ -43,9 +42,33 @@ BIOS_LCD_HD44780_4BIT_S = 1
 
 .segment "BIOS"
 
-    ; Pin mapping LCD data pins -> GPIO port B (upper nibble only).
-    ; PB0-PB3 are not used by this driver and are preserved.
-    PORTB_PINS = %11110000
+    ; -----------------------------------------------------------------
+    ; Pin configuration (override by defining before .include bios.s)
+    ;
+    ; Ports: GPIO::PORTB = 0, GPIO::PORTA = 1
+    ; Pins:  GPIO::P0 = $01, P1 = $02, P2 = $04, P3 = $08,
+    ;        P4 = $10, P5 = $20, P6 = $40, P7 = $80
+    ; -----------------------------------------------------------------
+
+    .ifndef LCD_CMND_PORT
+        LCD_CMND_PORT = GPIO::PORTB
+    .endif
+    .ifndef LCD_DATA_PORT
+        LCD_DATA_PORT = GPIO::PORTB
+    .endif
+    .ifndef LCD_PIN_RS
+        LCD_PIN_RS = GPIO::P0
+    .endif
+    .ifndef LCD_PIN_RWB
+        LCD_PIN_RWB = GPIO::P1
+    .endif
+    .ifndef LCD_PIN_EN
+        LCD_PIN_EN = GPIO::P2
+    .endif
+
+    CMND_PORT = LCD_CMND_PORT
+    DATA_PORT = LCD_DATA_PORT
+    DATA_PINS = %11110000
 
     .include "bios/lcd/hd44780_common.s"
 
@@ -65,20 +88,20 @@ BIOS_LCD_HD44780_4BIT_S = 1
         tya
         pha
 
-        ; Set port A control pins to output.
-        set_byte GPIO::port, #GPIO::PORTA
-        set_byte GPIO::mask, #PORTA_PINS
+        ; Set command pins to output.
+        set_byte GPIO::port, #CMND_PORT
+        set_byte GPIO::mask, #CMND_PINS
         jsr GPIO::set_outputs
 
-        ; Set port B data pins (upper nibble) to output.
-        ; PB0-PB3 direction is not touched.
-        set_byte GPIO::port, #GPIO::PORTB
-        set_byte GPIO::mask, #PORTB_PINS
+        ; Set data pins (upper nibble) to output.
+        ; Non-data pins on this port are not touched.
+        set_byte GPIO::port, #DATA_PORT
+        set_byte GPIO::mask, #DATA_PINS
         jsr GPIO::set_outputs
 
         ; Clear LCD control bits (EN, RW, RS), preserving non-LCD pins.
-        set_byte GPIO::port, #GPIO::PORTA
-        set_byte GPIO::mask, #PORTA_PINS
+        set_byte GPIO::port, #CMND_PORT
+        set_byte GPIO::mask, #CMND_PINS
         set_byte GPIO::value, #0
         jsr GPIO::set_pins
 
@@ -138,8 +161,8 @@ BIOS_LCD_HD44780_4BIT_S = 1
         pha
 
         ; Set control pins: RWB=0 (write), RS=0 (CMND), EN=0.
-        set_byte GPIO::port, #GPIO::PORTA
-        set_byte GPIO::mask, #PORTA_PINS
+        set_byte GPIO::port, #CMND_PORT
+        set_byte GPIO::mask, #CMND_PINS
         set_byte GPIO::value, #0
         jsr GPIO::set_pins
 
@@ -161,8 +184,8 @@ BIOS_LCD_HD44780_4BIT_S = 1
         pha
 
         ; Set control pins: RWB=0 (write), RS=1 (DATA), EN=0.
-        set_byte GPIO::port, #GPIO::PORTA
-        set_byte GPIO::mask, #PORTA_PINS
+        set_byte GPIO::port, #CMND_PORT
+        set_byte GPIO::mask, #CMND_PINS
         set_byte GPIO::value, #PIN_RS
         jsr GPIO::set_pins
 
@@ -185,27 +208,27 @@ BIOS_LCD_HD44780_4BIT_S = 1
 
         pha
 
-        ; Configure port B data pins for input (preserves PB0-PB3).
-        set_byte GPIO::port, #GPIO::PORTB
-        set_byte GPIO::mask, #PORTB_PINS
+        ; Configure data pins for input (preserves non-data pins).
+        set_byte GPIO::port, #DATA_PORT
+        set_byte GPIO::mask, #DATA_PINS
         jsr GPIO::set_inputs
 
         ; Set control pins: RWB=1 (read), RS=0 (CMND), EN=0.
-        set_byte GPIO::port, #GPIO::PORTA
-        set_byte GPIO::mask, #PORTA_PINS
+        set_byte GPIO::port, #CMND_PORT
+        set_byte GPIO::mask, #CMND_PINS
         set_byte GPIO::value, #PIN_RWB
         jsr GPIO::set_pins
 
-        ; High nibble: pulse EN high, read port B (D7=busy flag), EN low.
+        ; High nibble: pulse EN high, read data port (D7=busy flag), EN low.
         set_byte GPIO::mask, #PIN_EN
         jsr GPIO::turn_on
 
-        set_byte GPIO::port, #GPIO::PORTB
-        jsr GPIO::read_port          ; GPIO::value = port B byte
+        set_byte GPIO::port, #DATA_PORT
+        jsr GPIO::read_port          ; GPIO::value = data port byte
         lda GPIO::value              ; Save high nibble (has busy flag)
         pha
 
-        set_byte GPIO::port, #GPIO::PORTA
+        set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #PIN_EN
         jsr GPIO::turn_off
 
@@ -213,9 +236,9 @@ BIOS_LCD_HD44780_4BIT_S = 1
         jsr GPIO::turn_on
         jsr GPIO::turn_off
 
-        ; Restore port B data pins for output (preserves PB0-PB3).
-        set_byte GPIO::port, #GPIO::PORTB
-        set_byte GPIO::mask, #PORTB_PINS
+        ; Restore data pins for output (preserves non-data pins).
+        set_byte GPIO::port, #DATA_PORT
+        set_byte GPIO::mask, #DATA_PINS
         jsr GPIO::set_outputs
 
         ; Extract busy flag from the saved high nibble.
@@ -239,21 +262,21 @@ BIOS_LCD_HD44780_4BIT_S = 1
         ;   LCD::byte = byte to send
 
         ; High nibble: upper 4 bits of byte, already in position.
-        set_byte GPIO::port, #GPIO::PORTB
-        set_byte GPIO::mask, #PORTB_PINS
+        set_byte GPIO::port, #DATA_PORT
+        set_byte GPIO::mask, #DATA_PINS
         lda byte
         and #$f0
         sta GPIO::value
         jsr GPIO::set_pins
 
-        set_byte GPIO::port, #GPIO::PORTA
+        set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #PIN_EN
         jsr GPIO::turn_on
         jsr GPIO::turn_off
 
         ; Low nibble: lower 4 bits of byte, shifted to upper position.
-        set_byte GPIO::port, #GPIO::PORTB
-        set_byte GPIO::mask, #PORTB_PINS
+        set_byte GPIO::port, #DATA_PORT
+        set_byte GPIO::mask, #DATA_PINS
         lda byte
         asl
         asl
@@ -262,7 +285,7 @@ BIOS_LCD_HD44780_4BIT_S = 1
         sta GPIO::value
         jsr GPIO::set_pins
 
-        set_byte GPIO::port, #GPIO::PORTA
+        set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #PIN_EN
         jsr GPIO::turn_on
         jsr GPIO::turn_off
@@ -276,12 +299,12 @@ BIOS_LCD_HD44780_4BIT_S = 1
         ; LCD::byte, already positioned for PB4-PB7.
         ; RS and RWB must already be set by the caller.
 
-        set_byte GPIO::port, #GPIO::PORTB
-        set_byte GPIO::mask, #PORTB_PINS
+        set_byte GPIO::port, #DATA_PORT
+        set_byte GPIO::mask, #DATA_PINS
         set_byte GPIO::value, byte
         jsr GPIO::set_pins
 
-        set_byte GPIO::port, #GPIO::PORTA
+        set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #PIN_EN
         jsr GPIO::turn_on
         jsr GPIO::turn_off
