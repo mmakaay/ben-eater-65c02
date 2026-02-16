@@ -62,7 +62,7 @@ BIOS_WOZMON_S = 1
     .segment "WOZMON"
 
     ; No hardware initialization required like the original, since
-    ; the BIOS initialization already setup the hardware for us.
+    ; the BIOS initialization already set up the hardware for us.
     RESET:
         lda #$1B               ; Begin with escape.
 
@@ -90,6 +90,10 @@ BIOS_WOZMON_S = 1
     NEXTCHAR:
         jsr UART::read         ; Wait for a character.
         lda UART::byte         ; Get received byte.
+        cmp #$7F               ; DEL? (backspace on many terminals)
+        bne @not_del
+        lda #$08               ; Normalize to BS.
+    @not_del:
         cmp #$61               ; Lowercase letter?
         bcc @upper
         sbc #$20               ; Yes, convert to uppercase (carry set from CMP).
@@ -230,12 +234,6 @@ BIOS_WOZMON_S = 1
         adc #$06               ; Add offset for letter.
 
         ; NOP padding to keep ECHO at the well-known address $FFEF.
-        nop
-        nop
-        nop
-        nop
-        nop
-        nop
         nop
         nop
         nop
