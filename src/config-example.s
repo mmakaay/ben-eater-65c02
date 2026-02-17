@@ -22,6 +22,8 @@ INCLUDE_WOZMON = YES
 ; --------------------------------------------------------------------
 
 INCLUDE_UART = YES
+
+UART_DRIVER    = UM6551
 UART_BAUD_RATE = BAUD19200
 
 ; --------------------------------------------------------------------
@@ -37,6 +39,7 @@ UART_BAUD_RATE = BAUD19200
 
 INCLUDE_LCD = YES
 
+;--------
 ; Preset: Ben Eater wiring, 4-bit mode
 ;
 ; Same pin layout as the default, but only the upper four data
@@ -49,6 +52,7 @@ INCLUDE_LCD = YES
 ;LCD_PIN_RWB   = P6              ; Read/Write       (PA6)
 ;LCD_PIN_EN    = P7              ; Enable           (PA7)
 
+;--------
 ; Preset: single-port 4-bit mode (all on port B)
 ;
 ; Command and data share port B. PB0-PB2 for control, PB4-PB7
@@ -57,3 +61,4 @@ INCLUDE_LCD = YES
 ; diagram.
 
 ;LCD_DRIVER    = HD44780_4BIT
+

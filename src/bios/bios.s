@@ -20,24 +20,30 @@ BIOS_S = 1
 .include "bios/constants.s"
 .include "config.s"
 
-; Include the Hardware Abstraction Layer (HAL) and hardware drivers.
+; Hardware Abstraction Layer (HAL) and hardware drivers.
 .include "bios/io/w65c22.s"
 .include "bios/gpio.s"
-.if .defined(INCLUDE_LCD) .and INCLUDE_LCD
-    HAS_LCD = YES
-    .include "bios/lcd.s"
+.ifdef INCLUDE_LCD
+    .if INCLUDE_LCD
+        HAS_LCD = YES
+        .include "bios/lcd.s"
+    .endif
 .endif
-.if .defined(INCLUDE_UART) .and INCLUDE_UART
-    .include "bios/uart.s"
-    HAS_UART = YES
+.ifdef INCLUDE_UART
+    .if INCLUDE_UART
+        .include "bios/uart.s"
+        HAS_UART = YES
+    .endif
 .endif
 
 ; WozMon.
-.if .defined(INCLUDE_WOZMON) .and INCLUDE_WOZMON <> NO
-    .ifndef HAS_UART
-        .error "WoZMon cannot be enabled without UART support"
+.ifdef INCLUDE_WOZMON
+    .if INCLUDE_WOZMON
+        .ifndef HAS_UART
+            .error "WoZMon cannot be enabled without UART support"
+        .endif
+        .include "bios/wozmon.s"
     .endif
-    .include "bios/wozmon.s"
 .endif
 
 .scope BIOS
