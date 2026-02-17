@@ -1,36 +1,11 @@
 ; -----------------------------------------------------------------
 ; HD44780 LCD driver (4-bit data bus, 2 line display, 5x8 font)
 ;
-; Drives the LCD using a 4-bit data bus connection. Each byte is
-; transferred as two nibbles (high nibble first). Data writes use
-; pin masking to preserve non-LCD pins on shared ports.
+; Drives the LCD using a 4-bit data bus connection, with possibly
+; all pins connected to a single GPIO port.
 ;
-; Pin configuration
-; -----------------
-; All pins are configurable via LCD_* constants defined before
-; including bios.s. Command and data pins can be on the same or
-; different ports. The default layout uses a single port (port B),
-; leaving PB3 free for other hardware:
-;
-;    HD44780 LCD                           GPIO
-;    ┌─────────┐                          ┌─────────┐
-;    │         │                          │         │
-;    │  RS     │◄─────────────────────────┤ PB0     │ (PIN_RS)
-;    │  RWB    │◄─────────────────────────┤ PB1     │ (PIN_RWB)
-;    │  E      │◄─────────────────────────┤ PB2     │ (PIN_EN)
-;    │         │                     free─┤ PB3     │
-;    │  D4     │◄────────────────────────►│ PB4     │
-;    │  D5     │◄────────────────────────►│ PB5     │
-;    │  D6     │◄────────────────────────►│ PB6     │
-;    │  D7     │◄────────────────────────►│ PB7     │
-;    │         │                          │         │
-;    │  D0-D3  │         n/c              │  PA*    │ (free)
-;    │         │                          │         │
-;    └─────────┘                          └─────────┘
-;
-; Parameters are passed via zero page: LCD::byte.
+; Parameters and responses are passed via zero page: LCD::byte.
 ; All procedures preserve A, X, Y.
-;
 ; -----------------------------------------------------------------
 
 .ifndef BIOS_LCD_HD44780_4BIT_S
@@ -43,38 +18,16 @@ BIOS_LCD_HD44780_4BIT_S = 1
 .segment "BIOS"
 
     ; -----------------------------------------------------------------
-    ; Configuration
-    ;
-    ; The default configuration when using the 4 bit driver, matches
-    ; the configuration as used by Ben Eater in his LCD display
-    ; tutorial, making sure that no specific configuration is required
-    ; to make things work.
-    ;
-    ; The pin configuration can be overridden from `config.s`, for
-    ; example to only use pins on VIA port B, and keeping port A
-    ; completely free for other uses. See the `config.s.example` for
-    ; more information on this.
+    ; Configuration (for example configuration, see config-example.inc)
     ; -----------------------------------------------------------------
 
-    .ifndef LCD_CMND_PORT
-        LCD_CMND_PORT = ::PORTB
-    .endif
-    .ifndef LCD_DATA_PORT
-        LCD_DATA_PORT = ::PORTB
-    .endif
-    .ifndef LCD_PIN_RS
-        LCD_PIN_RS = ::P0
-    .endif
-    .ifndef LCD_PIN_RWB
-        LCD_PIN_RWB = ::P1
-    .endif
-    .ifndef LCD_PIN_EN
-        LCD_PIN_EN = ::P2
-    .endif
-
-    CMND_PORT = LCD_CMND_PORT
-    DATA_PORT = LCD_DATA_PORT
-    DATA_PINS = %11110000
+    CMND_PORT    = ::LCD_CMND_PORT
+    CMND_PIN_EN  = ::LCD_CMND_PIN_EN
+    CMND_PIN_RWB = ::LCD_CMND_PIN_RWB
+    CMND_PIN_RS  = ::LCD_CMND_PIN_RS
+    
+    DATA_PORT    = ::LCD_DATA_PORT
+    DATA_PINS    = %11110000
 
     ; -----------------------------------------------------------------
     ; Implementation
@@ -125,11 +78,11 @@ BIOS_LCD_HD44780_4BIT_S = 1
 
         ; Function set (8-bit): high nibble 0011 = $30.
         set_byte byte, #$30
-        jsr _send_init_nibble         ; 1st attempt
-        jsr _delay                   ; Wait >4.1ms
-        jsr _send_init_nibble         ; 2nd attempt
-        jsr _delay                   ; Wait >100us (delay is generous)
-        jsr _send_init_nibble         ; 3rd attempt
+        jsr _send_init_nibble       ; 1st attempt
+        jsr _delay                  ; Wait >4.1ms
+        jsr _send_init_nibble       ; 2nd attempt
+        jsr _delay                  ; Wait >100us (delay is generous)
+        jsr _send_init_nibble       ; 3rd attempt
         jsr _delay
 
         ; Switch to 4-bit mode: high nibble 0010 = $20.
@@ -139,11 +92,11 @@ BIOS_LCD_HD44780_4BIT_S = 1
         ; --- Now in 4-bit mode. Commands sent as two nibbles. ---
 
         set_byte byte, #%00101000   ; 4-bit mode, 2 line display, 5x8 font
-        jsr write_cmnd_when_ready
+        jsr write_cmnd
         set_byte byte, #%00001110   ; Turn display on, cursor on, blink off
-        jsr write_cmnd_when_ready
+        jsr write_cmnd
         set_byte byte, #%00000110   ; Shift cursor on data, no display shift
-        jsr write_cmnd_when_ready
+        jsr write_cmnd
 
         ; Clear the screen.
         jsr clr
@@ -188,7 +141,7 @@ BIOS_LCD_HD44780_4BIT_S = 1
         ; Set control pins: RWB=0 (write), RS=1 (DATA), EN=0.
         set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #CMND_PINS
-        set_byte GPIO::value, #PIN_RS
+        set_byte GPIO::value, #CMND_PIN_RS
         jsr GPIO::set_pins
 
         ; Send byte as two nibbles.
@@ -218,11 +171,11 @@ BIOS_LCD_HD44780_4BIT_S = 1
         ; Set control pins: RWB=1 (read), RS=0 (CMND), EN=0.
         set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #CMND_PINS
-        set_byte GPIO::value, #PIN_RWB
+        set_byte GPIO::value, #CMND_PIN_RWB
         jsr GPIO::set_pins
 
         ; High nibble: pulse EN high, read data port (D7=busy flag), EN low.
-        set_byte GPIO::mask, #PIN_EN
+        set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_on
 
         set_byte GPIO::port, #DATA_PORT
@@ -231,7 +184,7 @@ BIOS_LCD_HD44780_4BIT_S = 1
         pha
 
         set_byte GPIO::port, #CMND_PORT
-        set_byte GPIO::mask, #PIN_EN
+        set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_off
 
         ; Low nibble: clock it out (data ignored).
@@ -272,7 +225,7 @@ BIOS_LCD_HD44780_4BIT_S = 1
         jsr GPIO::set_pins
 
         set_byte GPIO::port, #CMND_PORT
-        set_byte GPIO::mask, #PIN_EN
+        set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_on
         jsr GPIO::turn_off
 
@@ -288,7 +241,7 @@ BIOS_LCD_HD44780_4BIT_S = 1
         jsr GPIO::set_pins
 
         set_byte GPIO::port, #CMND_PORT
-        set_byte GPIO::mask, #PIN_EN
+        set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_on
         jsr GPIO::turn_off
 
@@ -307,7 +260,7 @@ BIOS_LCD_HD44780_4BIT_S = 1
         jsr GPIO::set_pins
 
         set_byte GPIO::port, #CMND_PORT
-        set_byte GPIO::mask, #PIN_EN
+        set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_on
         jsr GPIO::turn_off
 

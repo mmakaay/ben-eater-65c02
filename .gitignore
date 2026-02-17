@@ -6,5 +6,5 @@
 **/*.sw?
 /cc65
 /emulator
-/src/config.s
+/src/config.inc
 .vscode/

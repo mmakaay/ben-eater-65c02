@@ -2,11 +2,11 @@ help:
     @just --list
 
 # Build ROM from invocation directory
-build:
+build: clean
     #!/bin/bash
-    echo "Building rom.bin ..."
+    echo "Building rom.bin for project ..."
     cd "{{invocation_directory()}}"
-    ca65 --include-dir "{{justfile_directory()}}/src/" *.s
+    ca65 -I "{{invocation_directory()}}" -I "{{justfile_directory()}}/src/" *.s
     ld65 --config "{{justfile_directory()}}/src/breadboard.cfg" *.o -o rom.bin
 
 dump:

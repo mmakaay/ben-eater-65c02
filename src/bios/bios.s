@@ -18,7 +18,10 @@ BIOS_S = 1
 
 ; Include global constants and the configuration file.
 .include "bios/constants.s"
-.include "config.s"
+.include "config.inc"
+
+; Include boot and interrupt vectors.
+.include "bios/vectors.s"
 
 ; Hardware Abstraction Layer (HAL) and hardware drivers.
 .include "bios/io/w65c22.s"
@@ -54,7 +57,7 @@ BIOS_S = 1
         ldx #$ff  ; Initialize stack pointer
         txs
 
-        jsr init_interrupts
+        jsr VECTORS::init
         .ifdef HAS_LCD
             jsr LCD::init
         .endif
@@ -67,53 +70,6 @@ BIOS_S = 1
     ; Can be jumped to (jmp BIOS::halt), to halt the computer.
     halt:
         jmp halt
-
-.segment "ZEROPAGE"
-
-    ; Address vectors, that can be modified in order to point
-    ; to a custom interrupt handler.
-    nmi_vector: .res 2
-    irq_vector: .res 2
-
-.segment "BIOS"
-
-    .proc init_interrupts
-        ; Setup the default interrupt handling:
-        ; 
-        ; - Interrupts disabled
-        ; - A null NMI handler
-        ; - A null IRQ handler
-        ;
-        ; Out:
-        ;   A = clobbered
-
-        ; Disable interrupts. If code that uses this BIOS requires
-        ; interrupt handling, these must be enabled using `cli`.
-        sei
-
-        cp_address nmi_vector, default_nmi
-        cp_address irq_vector, default_irq
-
-        rts
-    .endproc
-
-    dispatch_nmi:
-        jmp (nmi_vector)       ; Forward to configured NMI handler
-    
-    dispatch_irq:
-        jmp (irq_vector)       ; Forward to configured IRQ handler
-
-    default_nmi:
-        rti
-    
-    default_irq:
-        rti
-
-.segment "VECTORS"
-
-    .word dispatch_nmi         ; Non-Maskable Interrupt vector
-    .word boot                 ; Reset vector
-    .word dispatch_irq         ; IRQ vector
 
 .endscope
 

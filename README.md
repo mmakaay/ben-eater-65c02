@@ -60,16 +60,21 @@ Documentation at: https://cc65.github.io/doc/
 
 ## Configure the build
 
-To support different configurations, you have to provide a configuration file in
-`src/config.s`. This configuration file can for example be used to configure what
-VIA pins to use for the LCD display.
+To support different configurations (hardware and features), you have to provide
+a configuration file `config.inc`. This configuration file can for example be used
+to configure what VIA pins to use for the LCD display and whether to enable the
+WozMon module. You can place this configuration file in your project directory, or
+in `src/config.inc` to have a configuration that is shared between multiple projects.
 
-Sounds difficult? No worries... the bios code will use the hardware layout as
-used by Ben in his tutorial videos by default, so all you have to do to get started,
-is copy `src/config.s.example` to `src/config.s`. Only when you want to tweak the
-hardware configuration, you'll have to change settings from the config.
+An example configuration with explanation about the configuration options can be
+found in `src/config-example.inc`.
 
-For information on configuration options, see the `config.s` file.
+Sounds difficult? No worries... The projects (under `projects/*`) that re-implement
+the code from Ben's tutorial videos using this project's kernal implementation all
+have a configuration that matches the hardware layout at used in the videos. So if
+you are following along with the videos, the related projects should work as-is.
+
+For information on configuration options, see the `config-example.s` file.
 
 ## Build a ROM
 
@@ -87,18 +92,20 @@ Some commands that can be used:
 ```bash
 cd projects/some-project
 just build  # Compiles *.s files, and links them into a `rom.bin`.
-just write  # Writes `rom.bin` to EEPROM (given you use AT28C256 like Ben)
+just write  # Writes `rom.bin` to EEPROM (given you use AT28C256 like Ben).
+just dis    # Shows a disassembly of the created `rom.bin`.
+just dump   # Shows a hexdump of the creatd `rom.bin`.
 ```
 
 It is not required to use `just` of course. You can also execute the
-required build commands by hand. Take a look at the Justfile as a starting
+various commands by hand. You can take a look at the `Justfile` as a starting
 point for this.
 
 ## T48 EEPROM writer
 
 For writing the ROM, I use a T48 writer.
 
-Lesson leared: Do connect the device directly to a USB-C port on the MacBook.
+Lesson leared: Do connect the device *directly* to a USB-C port on the computer.
 It won't work when connected to a HUB, recognizable by a blinking LED.
 
 There is no vendor software for MacBook, but the open source application
@@ -110,9 +117,9 @@ There is no vendor software for MacBook, but the open source application
 To write a ROM image to an EEPROM:
 
 ```bash
-minipro -p AT28C256 -w rom_image.bin
+minipro -p AT28C256 -w rom.bin
 
-# or equivalent
+# or equivalent using the `Justfile` recipe
 
 just write
 ```
@@ -125,7 +132,7 @@ the EEPROM for the first time.
 ```bash
 minipro -u -p AT28C256 -w rom_image.bin
 
-# or equivalent
+# or equivalent using the `Justfile` recipe
 
 just write-u
 ```

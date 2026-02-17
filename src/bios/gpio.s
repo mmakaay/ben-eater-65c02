@@ -1,6 +1,20 @@
 ; -----------------------------------------------------------------
 ; GPIO (General Purpose I/O) abstraction
 ;
+; This provides a standard API for accessing device pins for
+; input/output purposes, abstracting the underlying hardware.
+; This can for example be used to control the port A and port B
+; pins on a 65C22 VIA IC. You can control either all pins on a
+; single port at once, or only a subset of pins. Even controlling
+; a single pin (without touching the other pins on the same port)
+; is made easy by this abstraction, e.g.:
+;
+;   lda GPIO::PORTA     ; Select VIA port A
+;   sta GPIO::port      ;
+;   lda GPIO::P4        ; Select pin 4 (i.e. PA4 in context of port A)
+;   sta GPIO::mask      ;
+;   jsr GPIO::turn_on   ; Turn on PA4 (set to output + write value)
+;
 ; Parameters are passed via zero page variables:
 ;
 ;   GPIO::port  = port selector (GPIO::PORTA or GPIO::PORTB)
@@ -8,7 +22,6 @@
 ;   GPIO::value = pin values / data byte
 ;
 ; All procedures preserve A, X, Y.
-;
 ; -----------------------------------------------------------------
 
 .ifndef BIOS_GPIO_S
@@ -23,10 +36,12 @@ BIOS_GPIO_S = 1
     port:  .res 1              ; Port selector (GPIO::PORTA or GPIO::PORTB)
     mask:  .res 1              ; Pin mask (meaning depends on procedure)
     value: .res 1              ; Pin values / data byte
+    temp:  .res 1              ; In-subroutine temporary storage
 
 .segment "BIOS"
 
     ; Import the hardware driver.
+    ; Currently, there is only one.
     .include "bios/gpio/w65c22_via.s"
 
     ; Port selection constants.
@@ -69,6 +84,8 @@ BIOS_GPIO_S = 1
         ; Set pin values for a selected group of pins.
         ; Pins not selected by the mask are preserved.
         ;
+        ; The pins must have be configured for output, before calling this subroutine.
+        ;
         ; In (zero page):
         ;   GPIO::mask  = pin mask (1 = update this pin, 0 = preserve)
         ;   GPIO::value = pin values (desired state for masked pins)
@@ -80,6 +97,8 @@ BIOS_GPIO_S = 1
         ; Turn on (set HIGH) selected pins.
         ; Other pins are preserved.
         ;
+        ; The pins must have be configured for output, before calling this subroutine.
+        ;
         ; In (zero page):
         ;   GPIO::mask = pin mask (1 = turn on this pin)
         ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
@@ -90,6 +109,8 @@ BIOS_GPIO_S = 1
         ; Turn off (set LOW) selected pins.
         ; Other pins are preserved.
         ;
+        ; The pins must have be configured for output, before calling this subroutine.
+        ;
         ; In (zero page):
         ;   GPIO::mask = pin mask (1 = turn off this pin)
         ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)
@@ -99,6 +120,8 @@ BIOS_GPIO_S = 1
     write_port = DRIVER::write_port
         ; Write a full byte to the port register.
         ;
+        ; The pins must have be configured for output, before calling this subroutine.
+        ;
         ; In (zero page):
         ;   GPIO::value = byte to write
         ;   GPIO::port  = port (GPIO::PORTA or GPIO::PORTB)
@@ -107,6 +130,8 @@ BIOS_GPIO_S = 1
 
     read_port = DRIVER::read_port
         ; Read a full byte from the port register.
+        ;
+        ; The pins must have be configured for input, before calling this subroutine.
         ;
         ; In (zero page):
         ;   GPIO::port = port (GPIO::PORTA or GPIO::PORTB)

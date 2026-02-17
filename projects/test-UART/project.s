@@ -47,13 +47,11 @@
         jsr set_cursor_line1
         lda UART::byte
         sta LCD::byte
-        jsr LCD::write_when_ready
+        jsr LCD::write
         inc cursor
 
         ; Echo byte back via UART transmitter.
-        lda LCD::byte
-        sta UART::byte
-        jsr UART::write
+        jsr UART::write_text
 
         jmp @loop
     .endproc
@@ -63,15 +61,15 @@
         ; Position cursor at start of LCD line 2.
         lda #$c0             ; Set DDRAM address = $40 (line 2)
         sta LCD::byte
-        jsr LCD::write_cmnd_when_ready
+        jsr LCD::write_cmnd
 
         ; Display "S:" prefix.
         lda #'S'
         sta LCD::byte
-        jsr LCD::write_when_ready
+        jsr LCD::write
         lda #':'
         sta LCD::byte
-        jsr LCD::write_when_ready
+        jsr LCD::write
 
         ; Display 8 status bits, MSB first.
         ; Bit meaning: IRQ DSR DCD TXE RXF OVR FRM PAR
@@ -85,7 +83,7 @@
         lda #'0'
         adc #0              ; '0' + carry = '0' or '1'
         sta LCD::byte
-        jsr LCD::write_when_ready
+        jsr LCD::write
         pla
         dex
         bne @loop
@@ -99,7 +97,7 @@
         lda cursor          ; DDRAM address = $00 + cursor position
         ora #%10000000      ; Set DDRAM address command (bit 7)
         sta LCD::byte
-        jsr LCD::write_cmnd_when_ready
+        jsr LCD::write_cmnd
         pla
         rts
     .endproc
@@ -112,7 +110,7 @@
         sta LCD::byte
         ldx #16
     @loop:
-        jsr LCD::write_when_ready
+        jsr LCD::write
         dex
         bne @loop
         clr_byte cursor
@@ -127,7 +125,7 @@
         lda hello,x
         beq @done
         sta LCD::byte
-        jsr LCD::write_when_ready
+        jsr LCD::write
         inx
         jmp @loop
     @done:

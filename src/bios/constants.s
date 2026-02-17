@@ -1,7 +1,7 @@
 ; --------------------------------------------------------------------
-; Global constants for use in config.s
+; Global constants for use in config.inc
 ;
-; These are loaded before config.s and before any HAL or driver
+; These are loaded before config.inc and before any HAL or driver
 ; module, so scoped symbols like GPIO::PORTA are not available
 ; yet at configuration time.
 ;
@@ -11,7 +11,7 @@
 ; used here translate directly into hardware behaviour.
 ;
 ; Adding a new driver or peripheral? Register its selectable
-; options here so they can be referenced from config.s.
+; options here so they can be referenced from config.inc.
 ; --------------------------------------------------------------------
 
 .ifndef CONSTANTS_S

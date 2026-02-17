@@ -2,36 +2,10 @@
 ; HD44780 LCD driver (8-bit data bus, 2 line display, 5x8 font)
 ;
 ; Drives the LCD using an 8-bit data bus connection, with all
-; 8 data bus pins on one port and 3 control pins on another.
+; 8 data bus pins on one GPIO port and 3 control pins on another.
 ;
-; Pin configuration
-; -----------------
-; All pins are configurable via LCD_* constants defined before
-; including bios.s. The default layout matches Ben Eater's
-; breadboard tutorial:
-;
-;    HD44780 LCD                           GPIO
-;    ┌─────────┐                          ┌─────────┐
-;    │         │                          │         │
-;    │         │                     n/c──┤ PA0-4   │
-;    │  RS     │◄─────────────────────────┤ PA5     │ (PIN_RS)
-;    │  RWB    │◄─────────────────────────┤ PA6     │ (PIN_RWB)
-;    │  E      │◄─────────────────────────┤ PA7     │ (PIN_EN)
-;    │         │                          │         │
-;    │  D0     │◄────────────────────────►│ PB0     │
-;    │  D1     │◄────────────────────────►│ PB1     │
-;    │  D2     │◄────────────────────────►│ PB2     │
-;    │  D3     │◄────────────────────────►│ PB3     │
-;    │  D4     │◄────────────────────────►│ PB4     │
-;    │  D5     │◄────────────────────────►│ PB5     │
-;    │  D6     │◄────────────────────────►│ PB6     │
-;    │  D7     │◄────────────────────────►│ PB7     │
-;    │         │                          │         │
-;    └─────────┘                          └─────────┘
-;
-; Parameters are passed via zero page: LCD::byte.
+; Parameters and responses are passed via zero page: LCD::byte.
 ; All procedures preserve A, X, Y.
-;
 ; -----------------------------------------------------------------
 
 .ifndef BIOS_LCD_HD44780_8BIT_S
@@ -44,32 +18,16 @@ BIOS_LCD_HD44780_8BIT_S = 1
 .segment "BIOS"
 
     ; -----------------------------------------------------------------
-    ; Configuration
-    ;
-    ; The default configuration matches the configuration as used by
-    ; Ben Eater in his LCD display tutorial, making sure that no
-    ; specific configuration is required to make things work.
+    ; Configuration (for example configuration, see config-example.inc)
     ; -----------------------------------------------------------------
 
-    .ifndef LCD_CMND_PORT
-        LCD_CMND_PORT = ::PORTA
-    .endif
-    .ifndef LCD_DATA_PORT
-        LCD_DATA_PORT = ::PORTB
-    .endif
-    .ifndef LCD_PIN_RS
-        LCD_PIN_RS = ::P5
-    .endif
-    .ifndef LCD_PIN_RWB
-        LCD_PIN_RWB = ::P6
-    .endif
-    .ifndef LCD_PIN_EN
-        LCD_PIN_EN = ::P7
-    .endif
+    CMND_PORT    = ::LCD_CMND_PORT
+    CMND_PIN_EN  = ::LCD_CMND_PIN_EN
+    CMND_PIN_RWB = ::LCD_CMND_PIN_RWB
+    CMND_PIN_RS  = ::LCD_CMND_PIN_RS
 
-    CMND_PORT = LCD_CMND_PORT
-    DATA_PORT = LCD_DATA_PORT
-    DATA_PINS = %11111111
+    DATA_PORT    = ::LCD_DATA_PORT
+    DATA_PINS    = %11111111
 
     ; -----------------------------------------------------------------
     ; Implementation
@@ -105,11 +63,11 @@ BIOS_LCD_HD44780_8BIT_S = 1
 
         ; Configure an initial display mode.
         set_byte byte, #%00111000         ; Set 8-bit mode, 2 line display, 5x8 font
-        jsr write_cmnd_when_ready
+        jsr write_cmnd
         set_byte byte, #%00001110         ; Turn display on, cursor on, blink off
-        jsr write_cmnd_when_ready
+        jsr write_cmnd
         set_byte byte, #%00000110         ; Shift cursor on data, no display shift
-        jsr write_cmnd_when_ready
+        jsr write_cmnd
 
         ; Clear the screen.
         jsr clr
@@ -140,7 +98,7 @@ BIOS_LCD_HD44780_8BIT_S = 1
         jsr GPIO::set_pins
 
         ; Pulse EN high then low to trigger data transfer.
-        set_byte GPIO::mask, #PIN_EN
+        set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_on
         jsr GPIO::turn_off
 
@@ -166,11 +124,11 @@ BIOS_LCD_HD44780_8BIT_S = 1
         ; Set control pins: RWB=0 (write), RS=1 (DATA), EN=0.
         set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #CMND_PINS
-        set_byte GPIO::value, #PIN_RS
+        set_byte GPIO::value, #CMND_PIN_RS
         jsr GPIO::set_pins
 
         ; Pulse EN high then low to trigger data transfer.
-        set_byte GPIO::mask, #PIN_EN
+        set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_on
         jsr GPIO::turn_off
 
@@ -196,18 +154,18 @@ BIOS_LCD_HD44780_8BIT_S = 1
         ; Set control pins: RWB=1 (read), RS=0 (CMND), EN=0.
         set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #CMND_PINS
-        set_byte GPIO::value, #PIN_RWB
+        set_byte GPIO::value, #CMND_PIN_RWB
         jsr GPIO::set_pins
 
         ; Pulse EN high, read data port, then EN low.
-        set_byte GPIO::mask, #PIN_EN
+        set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_on
 
         set_byte GPIO::port, #DATA_PORT
         jsr GPIO::read_port        ; GPIO::value = status byte from the LCD
 
         set_byte GPIO::port, #CMND_PORT
-        set_byte GPIO::mask, #PIN_EN
+        set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_off
 
         ; Restore data port for output.

@@ -76,7 +76,7 @@ BIOS_UART_UM6551_IRQ_S = 1
         sta write_ptr
 
         ; Setup and enable IRQ handler (for now, directly connected to the CPU).
-        cp_address ::BIOS::irq_vector, _irq_handler
+        cp_address ::VECTORS::irq_vector, _irq_handler
         cli
 
         ; Configure:

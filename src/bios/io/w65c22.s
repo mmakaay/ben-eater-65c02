@@ -15,7 +15,7 @@ BIOS_VIA_W65C22_S = 1
 ; address that is imported here.
 .import __IO_START__
 
-.scope VIA
+.scope IO
 
 .segment "BIOS"
 

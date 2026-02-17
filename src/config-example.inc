@@ -1,0 +1,127 @@
+; BIOS configuration
+;
+; All named constants used below (HD44780_8BIT, PORTA, P5, etc.)
+; are defined in bios/constants.s, which is loaded before this
+; file. See that file for the full list of available names.
+
+; --------------------------------------------------------------------
+; WozMon
+;
+; An adapted version of WozMon, including some bugfixes, and fitting
+; in the original Apple II WozMon address space $FF00 - $FFF9.
+; --------------------------------------------------------------------
+
+INCLUDE_WOZMON = YES
+
+; --------------------------------------------------------------------
+; UART for serial communication
+;
+; Since nobody ever seems to be using anything else than the typical
+; N-8-1 configuration (no parity, word length 8, 1 stop bit), only
+; the baud rate is configurable here.
+; --------------------------------------------------------------------
+
+INCLUDE_UART = YES
+
+UART_DRIVER    = UM6551
+UART_BAUD_RATE = BAUD19200
+
+; --------------------------------------------------------------------
+; LCD display
+;
+; To use a different setup, uncomment one of the presets below
+; or write your own.
+;
+; The CMND pins can be assigned to any pin on a single VIA port.
+; The DATA pins can only be assigned to P0-7 (in 8 bit mode) or
+; P4-7 (in 4 bit mode) of a single VIA port.
+; --------------------------------------------------------------------
+
+INCLUDE_LCD = YES
+
+;--------
+; Preset: Ben Eater tutorial wiring, 8-bit mode
+;
+; Same pin layout as used in the tutorial video, with the CMND pins
+; connected to VIA port A, and the DATA pins connected to VIA port B.
+;
+;    HD44780 LCD                           GPIO
+;    ┌─────────┐                          ┌─────────┐
+;    │         │                     n/c──┤ PA0-4   │
+;    │  RS     │◄─────────────────────────| PA5     │
+;    │  RWB    │◄─────────────────────────| PA6     │
+;    │  E      │◄─────────────────────────| PA7     │
+;    │         │                          │         │
+;    │  D0     │◄────────────────────────►│ PB0     │
+;    │  D1     │◄────────────────────────►│ PB1     │
+;    │  D2     │◄────────────────────────►│ PB2     │
+;    │  D3     │◄────────────────────────►│ PB3     │
+;    │  D4     │◄────────────────────────►│ PB4     │
+;    │  D5     │◄────────────────────────►│ PB5     │
+;    │  D6     │◄────────────────────────►│ PB6     │
+;    │  D7     │◄────────────────────────►│ PB7     │
+;    └─────────┘                          └─────────┘
+
+LCD_DRIVER       = HD44780_8BIT
+LCD_CMND_PORT    = PORTA         ; CMND pins connected to VIA port A
+LCD_CMND_PIN_RS  = P5            ; Register Select
+LCD_CMND_PIN_RWB = P6            ; Read/Write
+LCD_CMND_PIN_EN  = P7            ; Enable
+LCD_DATA_PORT    = PORTB         ; DATA pins connected to VIA port B
+
+;--------
+; Preset: Ben Eater tutorial wiring, but in 4-bit mode
+;
+; Same pin layout as the tutorial video, but only the upper four DATA
+; lines (PB4-7) are used. Pins PB0-3 can be disconnected.
+;
+;    HD44780 LCD                           GPIO
+;    ┌─────────┐                          ┌─────────┐
+;    │         │                          │         │
+;    │         │                     n/c──┤ PA0-4   │
+;    │  RS     │◄─────────────────────────| PA5     │
+;    │  RWB    │◄─────────────────────────| PA6     │
+;    │  E      │◄─────────────────────────| PA7     │
+;    │         │                          │         │
+;    │  D0-3   │──n/c                n/c──| PB0-3   │
+;    │  D4     │◄────────────────────────►│ PB4     │
+;    │  D5     │◄────────────────────────►│ PB5     │
+;    │  D6     │◄────────────────────────►│ PB6     │
+;    │  D7     │◄────────────────────────►│ PB7     │
+;    │         │                          │         │
+;    └─────────┘                          └─────────┘
+
+;LCD_DRIVER       = HD44780_4BIT
+;LCD_CMND_PORT    = PORTA
+;LCD_CMND_PIN_RS  = P5            ; Register Select
+;LCD_CMND_PIN_RWB = P6            ; Read/Write
+;LCD_CMND_PIN_EN  = P7            ; Enable
+;LCD_DATA_PORT    = PORTB         ; DATA pins connected to PB4-7
+
+;--------
+; Preset: single-port 4-bit mode (all on port B)
+;
+; CMND and DATA share port B. PB0-PB2 for control, PB4-PB7
+; for data, leaving PB3 free for other hardware. Port A is
+; entirely available.
+;
+;    HD44780 LCD                           GPIO
+;    ┌─────────┐                          ┌─────────┐
+;    │         │                     n/c-─│ PA0-7   │
+;    │         │                          │         │
+;    │  RS     │◄─────────────────────────┤ PB0     │
+;    │  RWB    │◄─────────────────────────┤ PB1     │
+;    │  E      │◄─────────────────────────┤ PB2     │
+;    │  D0-3   │──n/c                n/c-─| PB3     │
+;    │  D4     │◄────────────────────────►│ PB4     │
+;    │  D5     │◄────────────────────────►│ PB5     │
+;    │  D6     │◄────────────────────────►│ PB6     │
+;    │  D7     │◄────────────────────────►│ PB7     │
+;    └─────────┘                          └─────────┘
+
+;LCD_DRIVER       = HD44780_4BIT
+;LCD_CMND_PORT    = PORTB
+;LCD_CMND_PIN_RS  = P0            ; Register Select
+;LCD_CMND_PIN_RWB = P1            ; Read/Write
+;LCD_CMND_PIN_EN  = P2            ; Enable
+;LCD_DATA_PORT    = PORTB         ; DATA pins connected to PB4-7

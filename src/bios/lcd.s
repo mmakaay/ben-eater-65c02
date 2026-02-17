@@ -6,18 +6,16 @@
 ;
 ; Configuration
 ; -------------
-; Define these constants in `config.s` to override defaults.
+; Define these constants in `config.inc` to configure the driver:
 ;
-;   LCD_DRIVER    = HD44780_8BIT or HD44780_4BIT (default: HD44780_8BIT)
-;   LCD_CMND_PORT = GPIO port for CMND pins (PORTA or PORTB)
-;   LCD_DATA_PORT = GPIO port for DATA pins (PORTA or PORTB)
-;   LCD_PIN_RS    = pin bitmask for Register Select
-;   LCD_PIN_RWB   = pin bitmask for Read/Write
-;   LCD_PIN_EN    = pin bitmask for Enable
+;   LCD_DRIVER         = HD44780_8BIT or HD44780_4BIT
+;   LCD_CMND_PORT      = GPIO port for CMND pins (PORTA or PORTB)
+;   LCD_CMND_PIN_RS    = pin bitmask for Register Select
+;   LCD_CMND_PIN_RWB   = pin bitmask for Read/Write
+;   LCD_CMND_PIN_EN    = pin bitmask for Enable
+;   LCD_DATA_PORT      = GPIO port for DATA pins (PORTA or PORTB)
 ;
-; Each driver provides its own defaults. See hd44780_4bit.s and
-; hd44780_8bit.s for the default pin layouts.
-;
+; See `config-example.inc` for more information.
 ; -----------------------------------------------------------------
 
 .ifndef BIOS_LCD_S
@@ -31,12 +29,12 @@ BIOS_LCD_S = 1
     .elseif ::LCD_DRIVER = ::HD44780_4BIT
         .include "bios/lcd/hd44780_4bit.s"
     .else
-        .error "LCD_DRIVER invalid (see bios/constants.s for options)"
+        .error "LCD_DRIVER invalid (see config-example.s for options)"
     .endif
 
 .segment "ZEROPAGE"
 
-    byte: .res 1 ; Input byte for write / write_cmnd
+    byte: .res 1 ; Zero page byte, used as argument or return value
 
 .segment "BIOS"
 
@@ -58,16 +56,16 @@ BIOS_LCD_S = 1
         ;   LCD::byte != 0 if the LCD is busy
         ;   A, X, Y preserved
 
-    write_cmnd = DRIVER::write_cmnd
-        ; Write instruction to CMND register.
+    _write_cmnd = DRIVER::write_cmnd
+        ; Write instruction to CMND register (no wait).
         ;
         ; In (zero page):
         ;   LCD::byte = instruction byte to write
         ; Out:
         ;   A, X, Y preserved
 
-    write = DRIVER::write
-        ; Write byte to DATA register.
+    _write = DRIVER::write
+        ; Write byte to DATA register (no wait).
         ;
         ; In (zero page):
         ;   LCD::byte = byte to write
@@ -90,7 +88,7 @@ BIOS_LCD_S = 1
     ; High level convenience wrappers.
     ; -------------------------------------------------------------
 
-    .proc write_cmnd_when_ready
+    .proc write_cmnd
         ; Wait for LCD to become ready, then write instruction to
         ; CMND register.
         ;
@@ -108,12 +106,12 @@ BIOS_LCD_S = 1
         bne @wait
         pla                        ; Restore the instruction byte
         sta byte
-        jsr write_cmnd
+        jsr _write_cmnd
         pla
         rts
     .endproc
 
-    .proc write_when_ready
+    .proc write
         ; Wait for LCD to become ready, then write byte to DATA register.
         ;
         ; In (zero page):
@@ -130,7 +128,7 @@ BIOS_LCD_S = 1
         bne @wait
         pla                        ; Restore the data byte
         sta byte
-        jsr write
+        jsr _write
         pla
         rts
     .endproc
