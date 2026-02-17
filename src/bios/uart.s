@@ -24,7 +24,11 @@ BIOS_UART_S = 1
     .import __UART_START__
 
     ; Import the hardware driver.
-    .include "bios/uart/um6551.s"
+    .if ::UART_DRIVER = ::UM6551
+        .include "bios/uart/um6551.s"
+    .elseif ::UART_DRIVER = ::UM6551_IRQ
+        .include "bios/uart/um6551_irq.s"
+    .endif
 
 .segment "ZEROPAGE"
 
@@ -38,12 +42,6 @@ BIOS_UART_S = 1
 
     init = DRIVER::init
         ; Initialize the serial interface: N-8-1, 19200 baud.
-        ;
-        ; Out:
-        ;   A, X, Y preserved
-
-    soft_reset = DRIVER::soft_reset
-        ; Perform a soft reset of the UART.
         ;
         ; Out:
         ;   A, X, Y preserved

@@ -45,7 +45,7 @@ TIC2       = %00001000       ; Transmit interrupt = off, RTS = low,  transmitter
 TIC3       = %00001100       ; Transmit interrupt = off, RTS = Low,  transmitter = transmit BRK
 
 ; Receiver interrupt control
-IRQON      = %00000000       ; IRQB enabled (from bit 3 of status register) TODO read how this works
+IRQON      = %00000000       ; IRQB enabled (from bit 3 of status register) TODO read what that means
 IRQOFF     = %00000010       ; IRQB disabled
 
 ; Data terminal ready control
@@ -115,4 +115,42 @@ B19200     = %00001111       ; Baud rate 19200
 .endif
 
 .endif
+
+; -----------------------------------------------------------------
+; Implementation
+; -----------------------------------------------------------------
+
+; ... none yet
+
+; -----------------------------------------------------------------
+; Internal helpers (not part of the driver API)
+; -----------------------------------------------------------------
+
+.proc _soft_reset
+    ; Perform a soft reset of the UART.
+    ;
+    ; Out:
+    ;   A, X, Y preserved
+
+    push_axy
+
+    ; Soft reset by writing to the status register.
+    clr_byte STATUS_REGISTER
+
+    ; Wait for soft reset to complete. The UART needs time to finish its
+    ; internal reset before CTRL and CMD writes will take effect.
+    ; This is a crude delay loop, but it works. Before using this, an
+    ; attempt was done to base readiness on the TXEMPTY status bit, but
+    ; that did not work.
+    ldx #$ff
+    ldy #$ff
+@wait:
+    dey
+    bne @wait
+    dex
+    bne @wait
+
+    pull_axy
+    rts
+.endproc
 
