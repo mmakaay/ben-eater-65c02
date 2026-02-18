@@ -7,9 +7,10 @@ INC16_S = 1
     ; In:
     ;   target = address of the word to increment
     ; Out:
-    ;   target = value incremented by 1 + carry
-    ;   Carry = set when high byte overflows
+    ;   target = value incremented by 1
+    ;   Carry = set when word wraps ($FFFF -> $0000)
     ;   A = clobbered
+    
     clc
     lda     target
     adc     #1
