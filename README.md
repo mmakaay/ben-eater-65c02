@@ -1,25 +1,25 @@
-# 65C02 breadboard computer
+# BREADBOX, a KERNAL for 6502 breadboard computers
 
-This repository contains code for the Ben Eater's breadboard computer.
+This repository provides a KERNAL for the Ben Eater-style breadboard computers.
 See Ben's website at [https://eater.net](https://eater.net) for many useful resources
 and a very binge-worthy collection of explanation videos (only binge-worthy,
 if you are into this kind of thing, of course).
 
-The main goal of this repository is to provide useful BIOS functionality (hardware
-drivers and abstraction), and to provide useful stdlib subroutines and macros to
-include in your own programs. Just add your own application code, to get your
-breadboard computer to do fun stuff.
+The main goal of this repository is to provide useful KERNAL functionality (boot
+sequence, hardware drivers and abstraction), and to provide useful stdlib subroutines
+and macros to include in your own programs. Just add your own application code, to
+get your breadboard computer to do fun stuff.
 
-Projects are built on top of the BIOS functionality. A project starts out by including
-the BIOS code, and implementing the subroutine `main` to tell the computer what to do
-after the BIOS has initialized.
+Projects are built on top of the KERNAL functionality. A project starts out by including
+the KERNAL code, and implementing the subroutine `main` to tell the computer what to do
+after the KERNAL has initialized.
 
 ## Hello, world
 
 The mandatory example for any project:
 
 ```asm
-.include "bios/bios.s"
+.include "breadbox/kernal.s"
 
 hello:
     .asciiz "Hello, world!"
@@ -34,19 +34,19 @@ main:
     inx                        ; Move to the next byte position
     jmp @loop                  ; And repeat
 @done:
-    jmp BIOS::halt             ; Halt the computer
+    jmp KERNAL::halt           ; Halt the computer
 ```
 
-What you can see in here, is that hardware is abstracted by the BIOS, and that the code
+What you can see here, is that hardware is abstracted by the KERNAL, and that the code
 only has to worry about providing the required bytes to the LCD display.
 
-This code is also available as a project in `projects/hell-world`.
+This code is also available as a project in `projects/`.
 
 ## Writing assembly code
 
 Wasm is what Ben starts out with in his videos, but later on he uses the "cc65" suite.
 This suite provides *a lot* of useful features, and I have written all assembly code
-from this repository based on this.
+for this repository based on this.
 
 The suite can be built using:
 
@@ -70,11 +70,12 @@ An example configuration with explanation about the configuration options can be
 found in `src/config-example.inc`.
 
 Sounds difficult? No worries... The projects (under `projects/*`) that re-implement
-the code from Ben's tutorial videos using this project's kernal implementation all
-have a configuration that matches the hardware layout at used in the videos. So if
-you are following along with the videos, the related projects should work as-is.
+the code from Ben's tutorial videos, all have a configuration that matches the
+hardware layout at used in the videos. So if you are following along with the
+videos, the related tutorial projects should work as-is.
 
 For information on configuration options, see the `config-example.s` file.
+Copy this file to `config.s` to get started.
 
 ## Build a ROM
 
