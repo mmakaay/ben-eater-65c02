@@ -234,6 +234,9 @@ KERNAL_UART_UM6551_S = 1
         pha
         lda byte              ; Load byte from `byte` argument.
         sta DATA_REGISTER     ; Write it to the transmitter.
+        lda status            ; Clear TXEMPTY in shadow, so check_tx
+        and #($FF ^ TXEMPTY)  ; waits for the next TX-complete IRQ
+        sta status            ; before reporting ready again.
         pla
         rts
     .endproc

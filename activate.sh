@@ -7,4 +7,4 @@ export PATH="$PATH:$(pwd)/cc65/bin"
 
 # Extra lazy.
 alias b='just build'
-alias w='just build && just write'
+alias r='just build && just write'
