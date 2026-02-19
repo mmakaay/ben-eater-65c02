@@ -1,18 +1,44 @@
-# BREADBOX, a KERNAL for 6502 breadboard computers
+# BREADBOX 6502
 
-This repository provides a KERNAL for the Ben Eater-style breadboard computers.
-See Ben's website at [https://eater.net](https://eater.net) for many useful resources
-and a very binge-worthy collection of explanation videos (only binge-worthy,
-if you are into this kind of thing, of course).
+This repository provides a KERNAL for 6502 breadboard computers.
+No, "KERNAL" is not a typo: [see Wikipedia](https://en.wikipedia.org/wiki/KERNAL)
 
-The main goal of this repository is to provide useful KERNAL functionality (boot
-sequence, hardware drivers and abstraction), and to provide useful stdlib subroutines
-and macros to include in your own programs. Just add your own application code, to
-get your breadboard computer to do fun stuff.
+It was inspired by Ben Eater's 6502 breadboard tutorial series, and my desire
+to revive and brush up my 1982 assembly skill.
 
-Projects are built on top of the KERNAL functionality. A project starts out by including
-the KERNAL code, and implementing the subroutine `main` to tell the computer what to do
-after the KERNAL has initialized.
+See Ben's website at [https://eater.net](https://eater.net) for many useful
+resources and a very binge-worthy collection of tutorial videos
+(only binge-worthy, if you are into this kind of thing, of course).
+
+Of course, this code will work equally well for breadboard computers that have
+been materialized as a real PCB.
+
+## Features
+
+Projects are built on top of the KERNAL functionality. A project starts out by
+including the KERNAL code, and implementing the subroutine `main` to tell the
+computer what to do after the KERNAL has initialized.
+
+KERNAL:
+
+- Configurable hardware (at compile time)
+- Various hardware drivers
+- Hardware Abstraction Layer (HAL) - APIs to access hardware from your project
+- Boot sequence that initializes the system and hardware
+- Project-specific `main` routine, called by boot sequence after initialization
+- IRQ jump vectors (for IRQ and NMI) can be changed dynamically
+- Macros for often repeated bits of code
+- A stdlib (standard library) with routines you can include in your project
+- Written using the feature-rich `ca65` assembler from the `cc65` project
+
+Extra components:
+
+- An improved version of WozMon (Apple II monitor application)
+
+Demo software:
+
+- Example projects in `projects/`
+- including re-implementations of Ben's tutorial code using BREADBOX
 
 ## Hello, world
 
@@ -25,22 +51,23 @@ hello:
     .asciiz "Hello, world!"
 
 main:
-    ldx #0                     ; Byte position to read from `hello`
-@loop:
-    lda hello,x                ; Read next byte
-    beq @done                  ; Stop at terminating null-byte
-    sta LCD::byte              ; Line the byte up for the LCD display
-    jsr LCD::write_when_ready  ; Wait for LCD display to be ready, and then send byte
-    inx                        ; Move to the next byte position
-    jmp @loop                  ; And repeat
+    ldx #0               ; Byte position to read from `hello`
+
+    lda hello,x          ; Read next byte
+    beq @done            ; Stop at terminating null-byte
+    sta LCD::byte        ; Line up byte for the LCD display
+    jsr LCD::write       ; Wait for LCD display to be ready, then send byte
+    inx                  ; Move to next byte position
+    jmp @loop            ; And repeat
 @done:
-    jmp KERNAL::halt           ; Halt the computer
+    jmp KERNAL::halt     ; Halt the computer
 ```
 
-What you can see here, is that hardware is abstracted by the KERNAL, and that the code
-only has to worry about providing the required bytes to the LCD display.
+What you can see here, is that hardware is abstracted by the KERNAL's LCD HAL
+layer, and that the code only has to worry about providing the required
+bytes to the LCD display.
 
-This code is also available as a project in `projects/`.
+This code is also available as a project in `projects/hello-world`.
 
 ## Writing assembly code
 
@@ -60,31 +87,35 @@ Documentation at: https://cc65.github.io/doc/
 
 ## Configure the build
 
-To support different configurations (hardware and features), you have to provide
-a configuration file `config.inc`. This configuration file can for example be used
-to configure what VIA pins to use for the LCD display and whether to enable the
-WozMon module. You can place this configuration file in your project directory, or
-in `src/config.inc` to have a configuration that is shared between multiple projects.
+To support different configurations (hardware and features), you have to
+provide a configuration file `config.inc`. This configuration file can for
+example be used to configure what VIA pins to use for the LCD display and
+whether to enable the WozMon component. You can place this configuration
+file in your project directory, or in `src/config.inc` to have a
+configuration that is shared between multiple projects.
 
-An example configuration with explanation about the configuration options can be
-found in `src/config-example.inc`.
+An example configuration with explanation about the configuration options
+can be found in `src/config-example.inc`.
 
-Sounds difficult? No worries... The projects (under `projects/*`) that re-implement
-the code from Ben's tutorial videos, all have a configuration that matches the
-hardware layout at used in the videos. So if you are following along with the
-videos, the related tutorial projects should work as-is.
+Sounds difficult? No worries... The projects (under `projects/*`) that
+re-implement the code from Ben's tutorial videos, all have a configuration
+that matches the hardware layout at used in the videos. So if you are
+following along with the videos, the related tutorial projects should
+work as-is.
 
-For information on configuration options, see the `config-example.s` file.
-Copy this file to `config.s` to get started.
+For information on configuration options, see the `sr/config-example.s`
+file. Copy this file to `src/config.s` or your own project directory to
+get started.
 
 ## Build a ROM
 
-To build a ROM from assembly code, a `Justfile` is provided, that can be used
-to build the ROM images from `projects/*`.
+To build a ROM from assembly code, a `Justfile` is provided, that can
+be used to build the ROM images from `projects/*`.
 
-The `just` tool is a lot like `make`, only it is more about performing tasks
-than about build structuring, and it allows for hierarchical `Justfile`s in
-the directory structure. It can be installed using `brew install just`.
+The `just` tool is a lot like `make`, only it is more about performing
+tasks than about build structuring, and it allows for hierarchical
+`Justfile`s in the directory structure. It can be installed using
+`brew install just`.
 
 Documentation at: https://just.systems/man/en/
 

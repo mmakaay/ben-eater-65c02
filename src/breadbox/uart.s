@@ -125,9 +125,12 @@ KERNAL_UART_S = 1
         rts
     .endproc
 
-    .proc write_text
-        ; Text-mode write: if the byte is CR ($0D), send CR+LF.
-        ; For raw/binary output, use write instead.
+    .proc write_terminal
+        ; Write data to a terminal.
+        ;
+        ; This write mode can be used when writing data to a connected terminal device
+        ; (e.g. minicom connected to the UART). The output is processed to ensure
+        ; correct operation.
         ;
         ; In (zero page):
         ;   UART::byte = byte to write
@@ -135,7 +138,11 @@ KERNAL_UART_S = 1
         ;   A, X, Y preserved
 
         pha
-        lda byte
+
+        ; When sending a carriage return (CR, \r), follow up with a line feed (LF, \n)
+        ; to move the cursor to the next line rather than just the start of the current
+        ; one. While terminal applications can often handle this via a CR→CRNL setting,
+        ; doing it in code ensures correct behaviour regardless of terminal configuration.        lda byte
         cmp #$0d              ; Is it CR?
         bne @raw
         jsr write             ; Yes, send CR first

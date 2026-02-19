@@ -91,14 +91,21 @@ KERNAL_UART_UM6551_S = 1
 
 .segment "RAM"
 
-    input_buffer: .res $100    ; Circular buffer for incoming bytes
+    rx_buffer: .res $100       ; Circular buffer for incoming bytes
+    tx_buffer: .res $100       ; Circular buffer for outgoing bytes
 
 .segment "ZEROPAGE"
 
-    write_ptr:    .res 1       ; Write position in the input_buffer
-    read_ptr:     .res 1       ; Read position in the input_buffer
-    pending:      .res 1       ; Number of bytes pending in the input buffer
-    rx_off:       .res 1       ; Wether the remote is signalled to stop sending
+    rx_w_ptr:     .res 1       ; Write position in the rx_buffer
+    rx_r_ptr:     .res 1       ; Read position in the rx_buffer
+    rx_pending:   .res 1       ; Number of bytes pending in the input buffer
+    rx_off:       .res 1       ; Wether flow control halted rx
+
+    tx_w_ptr:     .res 1       ; Write position in the tx_buffer
+    tx_r_ptr:     .res 1       ; Read position in the tx_buffer
+    tx_pending:   .res 1       ; Number of bytes pending in the output buffer
+    tx_off:       .res 1       ; Wether flow control halted tx
+    
     status:       .res 1       ; Shadow of the STATUS register
 
 .segment "KERNAL"
@@ -137,9 +144,9 @@ KERNAL_UART_UM6551_S = 1
 
         ; Initialize variables.
         lda #0
-        sta read_ptr
-        sta write_ptr
-        sta pending
+        sta rx_r_ptr
+        sta rx_w_ptr
+        sta rx_pending
         sta rx_off
         lda STATUS_REGISTER
         sta status
@@ -175,7 +182,7 @@ KERNAL_UART_UM6551_S = 1
 
     .proc check_rx
         pha
-        lda pending
+        lda rx_pending
         sta byte
         pla
         rts
@@ -192,18 +199,18 @@ KERNAL_UART_UM6551_S = 1
         ; was read (carry = 0). This can also be used by callers to know if an
         ; actual read was done.
         clc            ; carry 0 = flag "no byte was read"
-        lda pending    ; Check if there are any pending bytes.
+        lda rx_pending ; Check if there are any pending bytes.
         beq @done      ; No, we're done, leaving carry = 0.
         sec            ; carry 1 = flat "byte was read"
 
         ; Read the next character from the input buffer.
-        ldx read_ptr
-        lda input_buffer,X
+        ldx rx_r_ptr
+        lda rx_buffer,X
         sta byte
         
         ; Update counters.
-        inc read_ptr
-        dec pending
+        inc rx_r_ptr
+        dec rx_pending
 
         jsr _turn_rx_on_if_buffer_emptying
     
@@ -247,10 +254,10 @@ KERNAL_UART_UM6551_S = 1
         beq @done            ; No, we're done here.
 
         lda DATA_REGISTER    ; Load the byte from the UART DATA register.
-        ldx write_ptr        ; Store the byte in the input buffer.
-        sta input_buffer,X
-        inc write_ptr        ; Update counters.
-        inc pending
+        ldx rx_w_ptr        ; Store the byte in the input buffer.
+        sta rx_buffer,X
+        inc rx_w_ptr        ; Update counters.
+        inc rx_pending
 
         jsr _turn_rx_off_if_buffer_almost_full
 
@@ -268,7 +275,7 @@ KERNAL_UART_UM6551_S = 1
         lda rx_off           ; RX turned off already? (0 = no, 1 = yes).
         bne @done            ; Yes, no need to check pending buffer size.
         
-        lda pending          ; Buffer almost full?
+        lda rx_pending        ; Buffer almost full?
         cmp #$d0
         bcc @done            ; No, no need to change rx_off state.
 
@@ -290,7 +297,7 @@ KERNAL_UART_UM6551_S = 1
         lda rx_off           ; RX turned off? (0 = no, 1 = yes).
         beq @done            ; No, no need to check pending buffer size.
         
-        lda pending          ; Buffer empty enough again?
+        lda rx_pending        ; Buffer empty enough again?
         cmp #$50
         bcs @done            ; No, no need to change rx_off state.
 

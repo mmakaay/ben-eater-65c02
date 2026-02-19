@@ -4,7 +4,7 @@
 ; Differences with the original:
 ; - No hard-coded memory addresses, but using the linker for
 ;   assigning these automatically.
-; - Serial console is used for output, via UART::write_text
+; - Serial console is used for output, via UART::write_terminal
 ;   which automatically expands CR to CR+LF for correct terminal
 ;   line endings.
 ; - The Apple II only supports upper case, resulting in the
@@ -241,7 +241,7 @@ KERNAL_WOZMON_S = 1
     ; Output the character in A to the serial console.
     ECHO:
         sta UART::byte
-        jsr UART::write_text
+        jsr UART::write_terminal
         rts
 
 .endscope

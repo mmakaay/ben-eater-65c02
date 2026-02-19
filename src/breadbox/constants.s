@@ -19,13 +19,16 @@ CONSTANTS_S = 1
 
 ; --- Driver selection -----------------------------------------------
 
+; IO
+W65C22       = 1      ; W65C22 VIA
+
 ; LCD
-HD44780_8BIT = 1      ; HD44780, 8-bit data bus
-HD44780_4BIT = 2      ; HD44780, 4-bit data bus
+HD44780_8BIT = 2      ; HD44780 LCD, 8-bit data bus
+HD44780_4BIT = 3      ; HD44780 LCD, 4-bit data bus
 
 ; UART
-UM6551       = 3      ; UM6551, IRQ-driven with buffering and flow control
-UM6551_POLL  = 4      ; UM6551, simple RXFULL/TXEMPTY polling
+UM6551       = 4      ; UM6551 ACIA, IRQ-driven with buffering and flow control
+UM6551_POLL  = 5      ; UM6551 ACIA, simple RXFULL/TXEMPTY polling
 
 ; --- Booleans ------------------------------------------------------
 

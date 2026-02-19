@@ -27,7 +27,7 @@ main:
     lda console_text,x
     beq @start
     sta UART::byte
-    jsr UART::write_text
+    jsr UART::write_terminal
     inx
     jmp @send_console_text
 

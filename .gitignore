@@ -7,4 +7,5 @@
 /cc65
 /emulator
 /src/config.inc
-.vscode/
+/.vscode
+/AGENTS.md

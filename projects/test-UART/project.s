@@ -51,7 +51,7 @@
         inc cursor
 
         ; Echo byte back via UART transmitter.
-        jsr UART::write_text
+        jsr UART::write_terminal
 
         jmp @loop
     .endproc
