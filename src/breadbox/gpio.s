@@ -24,8 +24,8 @@
 ; All procedures preserve A, X, Y.
 ; -----------------------------------------------------------------
 
-.ifndef BIOS_GPIO_S
-BIOS_GPIO_S = 1
+.ifndef KERNAL_GPIO_S
+KERNAL_GPIO_S = 1
 
 .include "breadbox/kernal.s"
 
@@ -42,7 +42,7 @@ BIOS_GPIO_S = 1
 
     ; Import the hardware driver.
     ; Currently, there is only one.
-    .include "breadbox/gpio/w65c22_via.s"
+    .include "breadbox/gpio/w65c22.s"
 
     ; Port selection constants.
     PORTA = 1

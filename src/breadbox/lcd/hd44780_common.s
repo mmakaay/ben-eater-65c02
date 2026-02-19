@@ -4,8 +4,8 @@
 ; Shared between 8-bit and 4-bit HD44780 drivers.
 ; -----------------------------------------------------------------
 
-.ifndef BIOS_LCD_HD44780_COMMON_S
-BIOS_LCD_HD44780_COMMON_S = 1
+.ifndef KERNAL_LCD_HD44780_COMMON_S
+KERNAL_LCD_HD44780_COMMON_S = 1
 
 .include "breadbox/kernal.s"
 

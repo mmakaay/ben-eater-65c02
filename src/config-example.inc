@@ -26,6 +26,12 @@ INCLUDE_UART = YES
 UART_DRIVER    = UM6551
 UART_BAUD_RATE = BAUD19200
 
+; Hardware flow control CTS pin (UM6551_IRQ driver only).
+; The CTS signal is directly driven via VIA GPIO, so it can be any
+; free pin. Default: PB3 (on port B).
+;UART_CTS_PORT  = PORTB
+;UART_CTS_PIN   = P3
+
 ; --------------------------------------------------------------------
 ; LCD display
 ;

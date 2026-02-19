@@ -11,8 +11,8 @@
 ;
 ; -----------------------------------------------------------------
 
-.ifndef BIOS_UART_S
-BIOS_UART_S = 1
+.ifndef KERNAL_UART_S
+KERNAL_UART_S = 1
 
 .include "breadbox/kernal.s"
 

@@ -2,8 +2,8 @@
 ; Common code for 6551 ACIA devices
 ; -----------------------------------------------------------------
 
-.ifndef BIOS_UART_6551_COMMON_S
-BIOS_UART_6551_COMMON_S = 1
+.ifndef KERNAL_UART_UM6551_COMMON_S
+KERNAL_UART_6551_UMCOMMON_S = 1
 
 .include "breadbox/kernal.s"
 
@@ -38,19 +38,19 @@ PARSPACE   = %11100000       ; Space parity bit transmitted, parity check disabl
 ECHOOFF    = %00000000       ; Echo disabled
 ECHOON     = %00010000       ; Echo enabled (use with TIC0)
 
-; Transmitter controls
-TIC0       = %00000000       ; Transmit interrupt = off, RTS = high, transmitter = off
-TIC1       = %00000100       ; Transmit interrupt = on,  RTS = low,  transmitter = on
-TIC2       = %00001000       ; Transmit interrupt = off, RTS = low,  transmitter = on
-TIC3       = %00001100       ; Transmit interrupt = off, RTS = Low,  transmitter = transmit BRK
+; Transmitter interrupt control
+TIC0       = %00000000       ; RTSB = high, IRQ = off, transmitter = off
+TIC1       = %00000100       ; RTSB = low,  IRQ = on,  transmitter = on
+TIC2       = %00001000       ; RTSB = low,  IRQ = off, transmitter = on
+TIC3       = %00001100       ; RTSB = Low,  IRQ = off, transmitter = transmit BRK
 
 ; Receiver interrupt control
 IRQON      = %00000000       ; IRQB enabled (from bit 3 of status register) TODO read what that means
 IRQOFF     = %00000010       ; IRQB disabled
 
 ; Data terminal ready control
-DTROFF     = %00000000       ; Receiver = off, interrupts = off, DTRB = high
-DTRON      = %00000001       ; Receiver = on, interrupts = on, DTRB = low
+DTROFF     = %00000000       ; DTRB = high, IRQ = off, receiver = off
+DTRON      = %00000001       ; DTRB = low,  IRQ = on,  receiver = on
 
 ; CTRL register
 

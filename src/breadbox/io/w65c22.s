@@ -5,8 +5,8 @@
 ; GPIO port operations are provided by the GPIO HAL (gpio.s).
 ; -----------------------------------------------------------------
 
-.ifndef BIOS_VIA_W65C22_S
-BIOS_VIA_W65C22_S = 1
+.ifndef KERNAL_VIA_W65C22_S
+KERNAL_VIA_W65C22_S = 1
 
 .include "breadbox/kernal.s"
 

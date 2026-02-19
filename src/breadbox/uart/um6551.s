@@ -49,8 +49,8 @@
 ;   XTAL1, leaving XTAL2 fully floating.
 ; -------------------------------------------------------------------------
 
-.ifndef BIOS_UART_UM6551_S
-BIOS_UART_UM6551_S = 1
+.ifndef KERNAL_UART_UM6551_S
+KERNAL_UART_UM6551_S = 1
 
 .include "breadbox/kernal.s"
 
@@ -58,7 +58,7 @@ BIOS_UART_UM6551_S = 1
 
 .segment "KERNAL"
 
-    .include "breadbox/uart/6551_common.s"
+    .include "breadbox/uart/um6551_common.s"
 
     ; The ZP byte is declared in the HAL (uart.s).
     byte = UART::byte

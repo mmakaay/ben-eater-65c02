@@ -1,5 +1,5 @@
 ; -----------------------------------------------------------------
-; LCD display HAL
+; LCD display API
 ;
 ; Parameters are passed via zero page: LCD::byte.
 ; All procedures preserve A, X, Y.
@@ -18,8 +18,8 @@
 ; See `config-example.inc` for more information.
 ; -----------------------------------------------------------------
 
-.ifndef BIOS_LCD_S
-BIOS_LCD_S = 1
+.ifndef KERNAL_LCD_S
+KERNAL_LCD_S = 1
 
 .include "breadbox/kernal.s"
 

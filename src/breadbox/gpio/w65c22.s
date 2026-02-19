@@ -13,8 +13,8 @@
 ;
 ; -----------------------------------------------------------------
 
-.ifndef BIOS_GPIO_VIA_W65C22_S
-BIOS_GPIO_VIA_W65C22_S = 1
+.ifndef KERNAL_GPIO_VIA_W65C22_S
+KERNAL_GPIO_VIA_W65C22_S = 1
 
 .include "breadbox/kernal.s"
 

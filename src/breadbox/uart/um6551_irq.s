@@ -11,15 +11,23 @@
 ; - IRQ triggering: so the CPU sees bytes as soon they are in the RX buffer.
 ; - Read buffer: to temporarily store incoming bytes when they arrive
 ;   faster than the computer can process them.
-; - Flow control: RTS support, to signal the other side that it must
-;   temporarily stop sending data, when the read buffer is filling up.
+; - Flow control: CTS signalling via a VIA GPIO pin, to tell the remote
+;   side to stop sending when the read buffer is filling up.
+;
+; About the flow control approach:
+; The 6551 has built-in RTS and DTR pins, but neither is usable for clean
+; flow control. TIC0 (the only way to raise RTSB) also disables the
+; transmitter, deadlocking any write. DTROFF disables the receiver and
+; IRQs, causing stranded bytes on re-enable (the 6551 needs a 0->1
+; RXFULL transition to fire an IRQ). Using a plain VIA GPIO pin avoids
+; both problems: the 6551 receiver stays always on, and we have direct,
+; side-effect-free control over the CTS line.
 ;
 ; Note:
-; At this point, only RTS is implemented. CTS support (to not send data
-; when the other side requests this) is not implemented. The simple reason
-; being that connecting systems normally are many magnitutes faster than
-; our trusty 6502, which makes it very unlikely that they will choke on our
-; data output rate.
+; Only inbound flow control is implemented (we tell the remote to stop).
+; Outbound flow control (remote tells us to stop) is not needed: the
+; connecting systems are normally many magnitudes faster than our trusty
+; 6502, so they will not choke on our data output rate.
 ;
 ; Wiring diagram
 ; --------------
@@ -32,10 +40,10 @@
 ;    │          │                          │ RESB     │◄─── RESET
 ;    │          │                          │ RxC      │──── n/c
 ;    │          │                          │ XTAL1/2  │◄─── 1.8432 MHz
-;    │          │                          │ RTSB     │───► RS232 CTS
+;    │          │                          │ RTSB     │──── n/c
 ;    │          │                          │ CTSB     │──── GND
 ;    │          │                          │ TxD      │◄─── RS232 TxD
-;    │          │                          │ DTRB     │──── n/c 
+;    │          │                          │ DTRB     │──── n/c
 ;    │          │                          │ RxD      │───► RS232 TxD
 ;    │  A0      │──── register select ────►│ RS0      │
 ;    │  A1      │──── register select ────►│ RS1      │
@@ -49,12 +57,18 @@
 ;    │  R/WB    │─────── read/write ──────►│ R/WB     │
 ;    └──────────┘                          └──────────┘
 ;
+;     I/O
+;    ┌──────────┐
+;    │ GPIO PIN │───► RS232 CTS (flow control, active LOW)
+;    └──────────┘
+;
 ; See the notes from `um6551.s` for some important pointers about the
 ; wiring diagram.
 ;
 ; Differences in wiring, compared to the `um6551.s` implementation:
-; - RTSB is connected to the CTS pin of the RS232 interface.
 ; - IRQB is connected to the IRQB pin on the CPU.
+; - A VIA GPIO pin (default: PB3) drives the RS232 CTS line for flow
+;   control. Configurable via UART_CTS_PORT/UART_CTS_PIN in config.inc.
 ;
 ; About the IRQB connection:
 ; - Be sure to add a pull-up resistor to IRQB on the CPU. The IRQB pin on
@@ -66,56 +80,93 @@
 ;   have those on stock myself, and went for a 1N5819 instead.
 ; -------------------------------------------------------------------------
 
-.ifndef BIOS_UART_UM6551_IRQ_S
-BIOS_UART_UM6551_IRQ_S = 1
+.ifndef KERNAL_UART_UM6551_IRQ_S
+KERNAL_UART_UM6551_IRQ_S = 1
 
 .include "breadbox/kernal.s"
 
 .scope DRIVER
 
-.segment "ZEROPAGE"
-
-    write_ptr: .res 1
-    read_ptr:  .res 1
-
 .segment "RAM"
 
-    input_buffer: .res $100
+    input_buffer: .res $100    ; Circular buffer for incoming bytes
+
+.segment "ZEROPAGE"
+
+    write_ptr:    .res 1       ; Write position in the input_buffer
+    read_ptr:     .res 1       ; Read position in the input_buffer
+    pending:      .res 1       ; Number of bytes pending in the input buffer
+    rx_off:       .res 1       ; Wether the remote is signalled to stop sending
+    status:       .res 1       ; Shadow of the STATUS register
 
 .segment "KERNAL"
 
-    .include "breadbox/uart/6551_common.s"
+    .include "breadbox/uart/um6551_common.s"
 
     ; The ZP byte is declared in the HAL (uart.s).
     byte = UART::byte
+
+    ; -----------------------------------------------------------------
+    ; Hardware flow control CTS pin.
+    ;
+    ; Flow control is driven via a VIA GPIO pin (instead of the 6551's
+    ; DTR or RTS pins, which have side effects that make them unusable
+    ; for clean flow control). The pin directly drives the RS232 CTS
+    ; line: HIGH = stop sending, LOW = send.
+    ;
+    ; The GPIO HAL is used for init and _turn_rx_on (main thread).
+    ; The IRQ handler (_turn_rx_off) uses direct register access to
+    ; avoid corrupting GPIO zero-page variables that LCD code may be
+    ; using when the IRQ fires.
+    ;
+    ; The VIA port and pin are configurable via config.inc
+    ; (UART_CTS_PORT, UART_CTS_PIN). Defaults: port B, pin 3.
+    ; -----------------------------------------------------------------
+
+    .ifndef ::UART_CTS_PORT
+        CTS_PORT     = ::PORTB
+        CTS_PORT_REG = IO::PORTB_REGISTER + ::PORTB
+    .else
+        CTS_PORT     = ::UART_CTS_PORT
+        CTS_PORT_REG = IO::PORTB_REGISTER + ::UART_CTS_PORT
+    .endif
+
+    .ifndef ::UART_CTS_PIN
+        CTS_PIN = ::P7
+    .else
+        CTS_PIN = ::UART_CTS_PIN
+    .endif
 
     .proc init
         push_axy
 
         jsr _soft_reset
 
-        ; Initialize the input buffer, by syncing up the read and write pointers.
-        ; This makes the circular buffer effectively empty.
-        lda read_ptr
+        ; Initialize variables.
+        lda #0
+        sta read_ptr
         sta write_ptr
+        sta pending
+        sta rx_off
+        lda STATUS_REGISTER
+        sta status
 
-        ; Setup and enable IRQ handler (for now, directly connected to the CPU).
+        ; Configure the CTS GPIO pin as output, active LOW (= send).
+        set_byte GPIO::port, #CTS_PORT
+        set_byte GPIO::mask, #CTS_PIN
+        jsr GPIO::set_outputs
+        jsr GPIO::turn_off
+
+        ; Configure the ACIA before enabling IRQs, to avoid spurious
+        ; interrupts from bytes that arrived during/before reset.
+        ; The receiver is always on (DTRON). Flow control is handled
+        ; externally via the CTS GPIO pin.
+        set_byte CTRL_REGISTER, #(LEN8 | STOP1 | USE_BAUD_RATE | RCSGEN)
+        set_byte CMD_REGISTER, #(PAROFF | ECHOOFF | TIC1 | DTRON | IRQON)
+
+        ; Now install the IRQ handler and enable interrupts.
         cp_address ::VECTORS::irq_vector, _irq_handler
         cli
-
-        ; Configure:
-        ; - data = 8 bits, 1 stopbit
-        ; - transmitter baud rate = according to configuration
-        ; - receiver baud rate = using transmitter baud rate generator
-        set_byte CTRL_REGISTER, #(LEN8 | STOP1 | USE_BAUD_RATE | RCSGEN)
-
-        ; Configure:
-        ; - parity = none
-        ; - echo = off
-        ; - transmitter = on
-        ; - receiver = on
-        ; - interrupts = enabled
-        set_byte CMD_REGISTER, #(PAROFF | ECHOOFF | TIC2 | DTRON | IRQON)
 
         pull_axy
         rts
@@ -123,25 +174,47 @@ BIOS_UART_UM6551_IRQ_S = 1
 
     .proc load_status
         pha
-        lda STATUS_REGISTER
+        lda status
         sta byte
         pla
         rts
     .endproc
 
-    check_rx = _get_buffer_size
+    .proc check_rx
+        pha
+        lda pending
+        sta byte
+        pla
+        rts
+    .endproc
 
     .proc read
         pha
         txa
         pha
 
+        ; Make sure a byte is available. The caller should have checked using
+        ; the check_rx routine, but if that was not done, then we don't actually
+        ; read from the buffer, and use the carry bit to indicate that no byte
+        ; was read (carry = 0). This can also be used by callers to know if an
+        ; actual read was done.
+        clc            ; carry 0 = flag "no byte was read"
+        lda pending    ; Check if there are any pending bytes.
+        beq @done      ; No, we're done, leaving carry = 0.
+        sec            ; carry 1 = flat "byte was read"
+
         ; Read the next character from the input buffer.
         ldx read_ptr
         lda input_buffer,X
         sta byte
+        
+        ; Update counters.
         inc read_ptr
+        dec pending
 
+        jsr _turn_rx_on_if_buffer_emptying
+    
+    @done:
         pla
         tax
         pla
@@ -150,7 +223,7 @@ BIOS_UART_UM6551_IRQ_S = 1
 
     .proc check_tx
         pha
-        lda STATUS_REGISTER
+        lda status
         and #TXEMPTY
         sta byte
         pla
@@ -159,8 +232,8 @@ BIOS_UART_UM6551_IRQ_S = 1
 
     .proc write
         pha
-        lda byte
-        sta DATA_REGISTER
+        lda byte              ; Load byte from `byte` argument.
+        sta DATA_REGISTER     ; Write it to the transmitter.
         pla
         rts
     .endproc
@@ -174,33 +247,68 @@ BIOS_UART_UM6551_IRQ_S = 1
         txa
         pha
 
-        lda DATA_REGISTER   ; Load the byte from the UART DATA register
+        lda STATUS_REGISTER  ; Acknowledge the IRQ by reading from STATUS.
+        sta status
 
-        ldx write_ptr       ; Store the byte in the input buffer
+        and #RXFULL          ; Does the status indicate we can read a byte?
+        beq @done            ; No, we're done here.
+
+        lda DATA_REGISTER    ; Load the byte from the UART DATA register.
+        ldx write_ptr        ; Store the byte in the input buffer.
         sta input_buffer,X
-        inc write_ptr
+        inc write_ptr        ; Update counters.
+        inc pending
 
-        lda STATUS_REGISTER ; Acknowledge the IRQ by reading from STATUS
-        
+        jsr _turn_rx_off_if_buffer_almost_full
+
+    @done:
         pla
         tax
         pla
         rti
     .endproc
 
-    .proc _get_buffer_size
-        ; Return the number of bytes that are stored in the buffer.
-        ;
-        ; byte = number of bytes in the buffer
-        ; A, X, Y = preserved
+    .proc _turn_rx_off_if_buffer_almost_full
+        ; Check if the buffer is almost full. If it is, signal the remote side
+        ; (via RS232 CTS) to stop sending data.
 
-        pha
-        lda write_ptr  ; Get the current write pointer
-        sec            ; Set carry, as required for clean subtract operation
-        sbc read_ptr   ; Subtract the read pointer to get the buffer size
-        sta byte
+        lda rx_off           ; RX turned off already? (0 = no, 1 = yes).
+        bne @done            ; Yes, no need to check pending buffer size.
+        
+        lda pending          ; Buffer almost full?
+        cmp #$e0
+        bcc @done            ; No, no need to change rx_off state.
 
-        pla
+        ; The buffer is almost full. Assert CTS HIGH to tell remote to stop.
+        lda #1
+        sta rx_off
+        lda CTS_PORT_REG
+        ora #CTS_PIN
+        sta CTS_PORT_REG
+
+    @done:
+        rts  
+    .endproc
+
+    .proc _turn_rx_on_if_buffer_emptying
+        ; Check if the buffer is emptying. If it is, signal the remote side
+        ; (via RS232 CTS) to start sending data.
+
+        lda rx_off           ; RX turned off? (0 = no, 1 = yes).
+        beq @done            ; No, no need to check pending buffer size.
+        
+        lda pending          ; Buffer emptying?
+        cmp #$b0
+        bcs @done            ; No, no need to change rx_off state.
+
+        ; The buffer is emptying. Assert CTS LOW to tell remote to send.
+        lda #0
+        sta rx_off
+        set_byte GPIO::port, #CTS_PORT
+        set_byte GPIO::mask, #CTS_PIN
+        jsr GPIO::turn_off
+    
+    @done:
         rts
     .endproc
 

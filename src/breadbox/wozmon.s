@@ -37,8 +37,8 @@
 ;
 ; -----------------------------------------------------------------
 
-.ifndef BIOS_WOZMON_S
-BIOS_WOZMON_S = 1
+.ifndef KERNAL_WOZMON_S
+KERNAL_WOZMON_S = 1
 
 .include "breadbox/kernal.s"
 
