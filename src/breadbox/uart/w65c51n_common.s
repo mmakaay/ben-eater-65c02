@@ -7,10 +7,10 @@
 ; TIC1 transmit interrupt relies on the same flag, so it never fires
 ; either.
 ;
-; The _tx_delay procedure provides a software workaround: a timed
-; delay calibrated to one character time at the configured baud
-; rate and CPU clock. Drivers call it after every DATA_REGISTER
-; write to ensure the transmitter has finished before the next byte.
+; The _tx_delay procedure provides a software workaround: it uses
+; the DELAY module to wait one character time after every
+; DATA_REGISTER write, ensuring the transmitter has finished
+; before the next byte.
 ; -----------------------------------------------------------------
 
 .ifndef KERNAL_UART_W65C51N_COMMON_S
@@ -117,18 +117,13 @@ B19200     = %00001111       ; Baud rate 19200
 .endif
 
 ; -----------------------------------------------------------------
-; TX delay calculation
+; TX delay
 ;
-; Character time in CPU cycles (10 bits: 1 start + 8 data + 1 stop).
-; The delay loop body is 5 cycles per iteration (dey:2 + bne:3).
-;
-; For baud rates where the iteration count fits in a single byte
-; (≤ 255), a simple Y-register loop is used. For larger counts
-; (low baud rates or fast clocks), a nested X/Y loop is used.
+; One character time in microseconds (10 bits: start + 8 data + stop).
+; Used by _tx_delay to wait for the transmitter to finish.
 ; -----------------------------------------------------------------
 
-CHAR_CYCLES = (10 * ::CPU_CLOCK) / ::UART_BAUD_RATE
-TX_DELAY_ITERATIONS = CHAR_CYCLES / 5
+CHAR_TIME_US = 10000000 / ::UART_BAUD_RATE
 
 ; -----------------------------------------------------------------
 ; Internal helpers (not part of the driver API)
@@ -159,48 +154,16 @@ TX_DELAY_ITERATIONS = CHAR_CYCLES / 5
     rts
 .endproc
 
-.if TX_DELAY_ITERATIONS <= 255
+.proc _tx_delay
+    ; Delay for approximately one character time.
+    ; Used after writing to DATA_REGISTER to work around the
+    ; W65C51N TXEMPTY bug.
+    ;
+    ; Out:
+    ;   A, X, Y preserved
 
-    .proc _tx_delay
-        ; Delay for approximately one character time.
-        ; Used after writing to DATA_REGISTER to work around the
-        ; W65C51N TXEMPTY bug.
-        ;
-        ; Clobbers: Y
-
-        ldy #TX_DELAY_ITERATIONS
-    @wait:
-        dey
-        bne @wait
-        rts
-    .endproc
-
-.else
-
-    ; Nested loop for lower baud rates or faster clocks.
-    ; Inner loop: 200 iterations × 5 cycles = 1000 cycles per outer pass.
-    ; Outer count is rounded up to ensure we meet the minimum delay.
-    TX_DELAY_OUTER = (TX_DELAY_ITERATIONS / 200) + 1
-    TX_DELAY_INNER = 200
-
-    .proc _tx_delay
-        ; Delay for approximately one character time.
-        ; Used after writing to DATA_REGISTER to work around the
-        ; W65C51N TXEMPTY bug.
-        ;
-        ; Clobbers: X, Y
-
-        ldx #TX_DELAY_OUTER
-    @outer:
-        ldy #TX_DELAY_INNER
-    @inner:
-        dey
-        bne @inner
-        dex
-        bne @outer
-        rts
-    .endproc
-
-.endif
+    delay_us CHAR_TIME_US
+    rts
+.endproc
 
 .endif

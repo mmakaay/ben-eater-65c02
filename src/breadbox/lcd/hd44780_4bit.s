@@ -28,6 +28,7 @@ KERNAL_LCD_HD44780_4BIT_S = 1
     
     DATA_PORT    = ::LCD_DATA_PORT
     DATA_PINS    = %11110000
+    FUNCTION_SET = %00101000  ; 4-bit mode, 2 line display, 5x8 font
 
     ; -----------------------------------------------------------------
     ; Implementation
@@ -46,67 +47,17 @@ KERNAL_LCD_HD44780_4BIT_S = 1
         ;   A, X, Y preserved
 
         push_axy
-
-        ; Set command pins to output.
-        set_byte GPIO::port, #CMND_PORT
-        set_byte GPIO::mask, #CMND_PINS
-        jsr GPIO::set_outputs
-
-        ; Set data pins (upper nibble) to output.
-        ; Non-data pins on this port are not touched.
-        set_byte GPIO::port, #DATA_PORT
-        set_byte GPIO::mask, #DATA_PINS
-        jsr GPIO::set_outputs
-
-        ; Clear LCD control bits (EN, RW, RS), preserving non-LCD pins.
-        set_byte GPIO::port, #CMND_PORT
-        set_byte GPIO::mask, #CMND_PINS
-        set_byte GPIO::value, #0
-        jsr GPIO::set_pins
-
-        ; --- Special 4-bit initialization sequence ---
-        ;
-        ; The LCD might be in an unknown state (8-bit mode, or halfway
-        ; through a 4-bit transfer). Sending the 8-bit function set
-        ; command ($30) three times guarantees a known state, after
-        ; which we can reliably switch to 4-bit mode.
-
-        ; Wait >15ms after power on.
-        jsr _delay
-        jsr _delay
-        jsr _delay
-
-        ; Function set (8-bit): high nibble 0011 = $30.
-        set_byte byte, #$30
-        jsr _send_init_nibble       ; 1st attempt
-        jsr _delay                  ; Wait >4.1ms
-        jsr _send_init_nibble       ; 2nd attempt
-        jsr _delay                  ; Wait >100us (delay is generous)
-        jsr _send_init_nibble       ; 3rd attempt
-        jsr _delay
-
-        ; Switch to 4-bit mode: high nibble 0010 = $20.
-        set_byte byte, #$20
-        jsr _send_init_nibble
-
-        ; --- Now in 4-bit mode. Commands sent as two nibbles. ---
-
-        set_byte byte, #%00101000   ; 4-bit mode, 2 line display, 5x8 font
-        jsr write_cmnd
-        set_byte byte, #%00001110   ; Turn display on, cursor on, blink off
-        jsr write_cmnd
-        set_byte byte, #%00000110   ; Shift cursor on data, no display shift
-        jsr write_cmnd
-
-        ; Clear the screen.
+        jsr _configure_gpio_pins
+        jsr _power_up_in_8bit_mode
+        jsr _enable_4bit_mode
+        jsr _configure_display
         jsr clr
-
         pull_axy
         rts
     .endproc
 
     .proc write_cmnd
-        ; Write instruction to CMND register (two nibbles).
+        ; Write instruction to CMND register (as two nibbles).
         ;
         ; In (zero page):
         ;   LCD::byte = instruction byte to write
@@ -115,21 +66,21 @@ KERNAL_LCD_HD44780_4BIT_S = 1
 
         pha
 
-        ; Set control pins: RWB=0 (write), RS=0 (CMND), EN=0.
+        ; Select CMND register in write mode: RWB=0 (write), RS=0 (CMND), EN=0.
         set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #CMND_PINS
         set_byte GPIO::value, #0
         jsr GPIO::set_pins
 
         ; Send byte as two nibbles.
-        jsr _send_byte
+        jsr _write_byte_as_two_nibbles
 
         pla
         rts
     .endproc
 
     .proc write
-        ; Write byte to DATA register (two nibbles).
+        ; Write byte to DATA register (as two nibbles).
         ;
         ; In (zero page):
         ;   LCD::byte = byte to write
@@ -138,14 +89,14 @@ KERNAL_LCD_HD44780_4BIT_S = 1
 
         pha
 
-        ; Set control pins: RWB=0 (write), RS=1 (DATA), EN=0.
+        ; Select DATA register in write mode: RWB=0 (write), RS=1 (DATA), EN=0.
         set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #CMND_PINS
         set_byte GPIO::value, #CMND_PIN_RS
         jsr GPIO::set_pins
 
         ; Send byte as two nibbles.
-        jsr _send_byte
+        jsr _write_byte_as_two_nibbles
 
         pla
         rts
@@ -163,7 +114,7 @@ KERNAL_LCD_HD44780_4BIT_S = 1
 
         pha
 
-        ; Configure data pins for input (preserves non-data pins).
+        ; Configure data pins for input.
         set_byte GPIO::port, #DATA_PORT
         set_byte GPIO::mask, #DATA_PINS
         jsr GPIO::set_inputs
@@ -174,15 +125,20 @@ KERNAL_LCD_HD44780_4BIT_S = 1
         set_byte GPIO::value, #CMND_PIN_RWB
         jsr GPIO::set_pins
 
-        ; High nibble: pulse EN high, read data port (D7=busy flag), EN low.
+        ; EN to high, to make status available on DATA port.
         set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_on
 
+        ; Select and read the DATA port.
         set_byte GPIO::port, #DATA_PORT
-        jsr GPIO::read_port          ; GPIO::value = data port byte
-        lda GPIO::value              ; Save high nibble (has busy flag)
-        pha
+        jsr GPIO::read_port
 
+        ; Extract and store the busy flag.
+        lda GPIO::value              
+        and #BUSY_FLAG
+        sta byte
+
+        ; EN to low, to stop the read operation on the DATA port.
         set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_off
@@ -191,15 +147,10 @@ KERNAL_LCD_HD44780_4BIT_S = 1
         jsr GPIO::turn_on
         jsr GPIO::turn_off
 
-        ; Restore data pins for output (preserves non-data pins).
+        ; Restore data pins for output.
         set_byte GPIO::port, #DATA_PORT
         set_byte GPIO::mask, #DATA_PINS
         jsr GPIO::set_outputs
-
-        ; Extract busy flag from the saved high nibble.
-        pla
-        and #BUSY_FLAG
-        sta byte
 
         pla
         rts
@@ -209,9 +160,11 @@ KERNAL_LCD_HD44780_4BIT_S = 1
     ; Internal helpers (not part of the driver API)
     ; -----------------------------------------------------------------
 
-    .proc _send_byte
-        ; Send LCD::byte as two nibbles over the 4-bit data bus.
-        ; Control pins (RS, RWB) must already be set by the caller.
+    .proc _write_byte_as_two_nibbles
+        ; Write LCD::byte as two nibbles to the 4-bit data bus.
+        ;
+        ; Control pins to select the register to use (RS = DATA/CMND) and
+        ; to put it in write mode (RWB = 0) must already be set by the caller.
         ;
         ; In (zero page):
         ;   LCD::byte = byte to send
@@ -220,7 +173,7 @@ KERNAL_LCD_HD44780_4BIT_S = 1
         set_byte GPIO::port, #DATA_PORT
         set_byte GPIO::mask, #DATA_PINS
         lda byte
-        and #$f0
+        and #$f0 ; Not strictly required, because of pin masking.
         sta GPIO::value
         jsr GPIO::set_pins
 
@@ -245,45 +198,6 @@ KERNAL_LCD_HD44780_4BIT_S = 1
         jsr GPIO::turn_on
         jsr GPIO::turn_off
 
-        rts
-    .endproc
-
-    .proc _send_init_nibble
-        ; Send a single nibble during the initialization sequence
-        ; (before 4-bit mode is active). The nibble value is read from
-        ; LCD::byte, already positioned for PB4-PB7.
-        ; RS and RWB must already be set by the caller.
-
-        set_byte GPIO::port, #DATA_PORT
-        set_byte GPIO::mask, #DATA_PINS
-        set_byte GPIO::value, byte
-        jsr GPIO::set_pins
-
-        set_byte GPIO::port, #CMND_PORT
-        set_byte GPIO::mask, #CMND_PIN_EN
-        jsr GPIO::turn_on
-        jsr GPIO::turn_off
-
-        rts
-    .endproc
-
-    .proc _delay
-        ; Delay approximately 5ms at 1MHz.
-        ; Used during the initialization sequence where busy flag
-        ; polling is not yet available.
-        ;
-        ; Out:
-        ;   A preserved
-        ;   X, Y clobbered (caller must save if needed)
-
-        ldx #5
-    @outer:
-        ldy #250
-    @inner:
-        dey                          ; 2 cycles
-        bne @inner                   ; 3 cycles (taken)
-        dex                          ; 2 cycles
-        bne @outer                   ; 3 cycles (taken)
         rts
     .endproc
 

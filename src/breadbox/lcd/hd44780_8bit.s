@@ -28,6 +28,7 @@ KERNAL_LCD_HD44780_8BIT_S = 1
 
     DATA_PORT    = ::LCD_DATA_PORT
     DATA_PINS    = %11111111
+    FUNCTION_SET = %00111000  ; 8-bit mode, 2 line display, 5x8 font
 
     ; -----------------------------------------------------------------
     ; Implementation
@@ -45,33 +46,10 @@ KERNAL_LCD_HD44780_8BIT_S = 1
         ;   A, X, Y preserved
 
         pha
-
-        ; Set data pins to output.
-        set_byte GPIO::port, #DATA_PORT
-        set_byte GPIO::mask, #DATA_PINS
-        jsr GPIO::set_outputs
-
-        ; Set command pins to output.
-        set_byte GPIO::port, #CMND_PORT
-        set_byte GPIO::mask, #CMND_PINS
-        jsr GPIO::set_outputs
-        
-        ; Clear LCD control bits (EN, RW, RS), preserving non-LCD pins.
-        set_byte GPIO::mask, #CMND_PINS
-        set_byte GPIO::value, #0
-        jsr GPIO::set_pins
-
-        ; Configure an initial display mode.
-        set_byte byte, #%00111000         ; Set 8-bit mode, 2 line display, 5x8 font
-        jsr write_cmnd
-        set_byte byte, #%00001110         ; Turn display on, cursor on, blink off
-        jsr write_cmnd
-        set_byte byte, #%00000110         ; Shift cursor on data, no display shift
-        jsr write_cmnd
-
-        ; Clear the screen.
+        jsr _configure_gpio_pins
+        jsr _power_up_in_8bit_mode
+        jsr _configure_display
         jsr clr
-
         pla
         rts
     .endproc
@@ -157,13 +135,20 @@ KERNAL_LCD_HD44780_8BIT_S = 1
         set_byte GPIO::value, #CMND_PIN_RWB
         jsr GPIO::set_pins
 
-        ; Pulse EN high, read data port, then EN low.
+        ; EN to high, to make status available on DATA port.
         set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_on
 
+        ; Select and read the DATA port.
         set_byte GPIO::port, #DATA_PORT
-        jsr GPIO::read_port        ; GPIO::value = status byte from the LCD
+        jsr GPIO::read_port
 
+        ; Extract and store the busy flag.
+        lda GPIO::value              
+        and #BUSY_FLAG
+        sta byte
+
+        ; EN to low, to stop the read operation on the DATA port.
         set_byte GPIO::port, #CMND_PORT
         set_byte GPIO::mask, #CMND_PIN_EN
         jsr GPIO::turn_off
@@ -172,11 +157,6 @@ KERNAL_LCD_HD44780_8BIT_S = 1
         set_byte GPIO::port, #DATA_PORT
         set_byte GPIO::mask, #DATA_PINS
         jsr GPIO::set_outputs
-
-        ; Strip all bits except the busy bit and store in LCD::byte.
-        lda GPIO::value
-        and #BUSY_FLAG
-        sta byte
 
         pla
         rts
