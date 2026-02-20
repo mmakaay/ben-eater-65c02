@@ -1,83 +1,111 @@
 ; ----------------------------------------------------------------------------
-; UART test 
+; UART test
 ;
-; This will:
-; - show UART status information bits on line 2 of the LCD
-; - print characters that are received over the serial connection to
-;   line 1 of the LCD, and echo then back over the serial connection
+; Echo test for serial communication. Received bytes are echoed back over
+; the serial connection. The LCD shows status information.
 ;
-; This can be used to check if the serial communication is working correctly.
+; Two display modes, toggled at runtime with CTRL+D:
+;
+; Normal mode (default):
+;   Line 1: "Serial test"
+;   Line 2: "^D = debug"
+;   Echo runs silently; LCD is not updated per byte.
+;
+; Debug mode:
+;   Line 1: received characters (wraps after 16 chars)
+;   Line 2: UART status register bits (updated continuously)
+;   Useful for diagnosing signal integrity and flow control.
 ; ----------------------------------------------------------------------------
-
-; Uncomment to disable LCD debug output support.
-;ENABLE_LCD = 1
 
 .include "breadbox/kernal.s"
 
-.ifdef ENABLE_LCD
+CTRL_D = $04
+
 .segment "ZEROPAGE"
 
-    cursor: .res 1
-.endif
+    cursor:     .res 1          ; LCD line 1 cursor position (0-15)
+    debug_mode: .res 1          ; 0 = normal, 1 = debug
 
 .segment "CODE"
 
-.ifdef ENABLE_LCD
-    hello: .asciiz "Serial test"
-.endif
+    msg_title:   .asciiz "Serial test"
+    msg_hint:    .asciiz "^D = debug"
 
     .proc main
-.ifdef ENABLE_LCD
-        jsr display_welcome_message
-        lda #16  ; Cursor to end of line, so first byte read clears LCD line 1
-        sta cursor
-.endif
+        clr_byte debug_mode
+        jsr show_normal_screen
 
     @loop:
-.ifdef ENABLE_LCD
-        ; Show UART status register.
+        ; In debug mode, continuously refresh the status display.
+        lda debug_mode
+        beq @wait_for_rx
         jsr show_status
-.endif
 
-        ; Loop, until we read a byte from the receive buffer.
+    @wait_for_rx:
+        ; Try to read a byte from the receive buffer.
         jsr UART::read
         bcc @loop
 
-.ifdef ENABLE_LCD
-        ; Wrap if cursor is at end of LCD line 1.
+        ; Check for CTRL+D toggle.
+        lda UART::byte
+        cmp #CTRL_D
+        beq @toggle
+
+        ; In debug mode, display the byte on LCD line 1.
+        lda debug_mode
+        beq @echo
+
+        ; Wrap cursor at end of LCD line 1.
         lda cursor
         cmp #16
-        bne @read
+        bne @display
         jsr clear_line1
-.endif
 
-    @read:
-.ifdef ENABLE_LCD
-        ; Position cursor, then display received byte on LCD line 1.
+    @display:
         jsr set_cursor_line1
-.endif
         lda UART::byte
-
-.ifdef ENABLE_LCD
         sta LCD::byte
         jsr LCD::write
         inc cursor
-.endif
 
+    @echo:
         ; Echo byte back via UART transmitter.
         jsr UART::write_terminal
+        jmp @loop
 
+    @toggle:
+        lda debug_mode
+        eor #1
+        sta debug_mode
+        beq @to_normal
+
+        ; Switching to debug mode.
+        jsr LCD::clr
+        lda #16                  ; Force line 1 clear on first byte.
+        sta cursor
+        jmp @loop
+
+    @to_normal:
+        jsr show_normal_screen
         jmp @loop
     .endproc
 
-.ifdef ENABLE_LCD
+    ; ------------------------------------------------------------------
+    ; LCD display helpers
+    ; ------------------------------------------------------------------
+
+    ; Display the normal mode screen (title + hint).
+    .proc show_normal_screen
+        jsr LCD::clr
+        jsr print_title
+        jsr set_cursor_line2
+        jsr print_hint
+        rts
+    .endproc
 
     ; Show the UART status register bits on LCD line 2.
     .proc show_status
-        ; Position cursor at start of LCD line 2.
-        lda #$c0             ; Set DDRAM address = $40 (line 2)
-        sta LCD::byte
-        jsr LCD::write_cmnd
+        jsr set_cursor_line2
 
         ; Display "S:" prefix.
         lda #'S'
@@ -97,7 +125,7 @@
         rol
         pha
         lda #'0'
-        adc #0              ; '0' + carry = '0' or '1'
+        adc #0                   ; '0' + carry = '0' or '1'
         sta LCD::byte
         jsr LCD::write
         pla
@@ -110,15 +138,25 @@
     ; Move LCD cursor to current position on line 1.
     .proc set_cursor_line1
         pha
-        lda cursor          ; DDRAM address = $00 + cursor position
-        ora #%10000000      ; Set DDRAM address command (bit 7)
+        lda cursor
+        ora #%10000000           ; Set DDRAM address command (bit 7)
         sta LCD::byte
         jsr LCD::write_cmnd
         pla
         rts
     .endproc
 
-    ; Clear LCD line: write spaces and set cursor to start of line.
+    ; Move LCD cursor to start of line 2.
+    .proc set_cursor_line2
+        pha
+        lda #$c0                 ; DDRAM address = $40 (line 2)
+        sta LCD::byte
+        jsr LCD::write_cmnd
+        pla
+        rts
+    .endproc
+
+    ; Clear LCD line 1: write spaces and reset cursor to start.
     .proc clear_line1
         pha
         jsr LCD::home
@@ -134,11 +172,11 @@
         rts
     .endproc
 
-    ; Print the welcome message on the LCD.
-    .proc display_welcome_message
+    ; Print the title message on LCD.
+    .proc print_title
         ldx #0
     @loop:
-        lda hello,x
+        lda msg_title,x
         beq @done
         sta LCD::byte
         jsr LCD::write
@@ -148,7 +186,16 @@
         rts
     .endproc
 
-.endif
-
-
-
+    ; Print the hint message on LCD.
+    .proc print_hint
+        ldx #0
+    @loop:
+        lda msg_hint,x
+        beq @done
+        sta LCD::byte
+        jsr LCD::write
+        inx
+        jmp @loop
+    @done:
+        rts
+    .endproc
