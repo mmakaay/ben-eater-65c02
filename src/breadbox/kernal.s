@@ -14,7 +14,7 @@ KERNAL_S = 1
 
 ; Include general purpose macros, that make it easier to write some
 ; often used code fragments.
-.include "macros/macros.s"
+.include "breadbox/macros/macros.s"
 
 ; Include global constants and the configuration file.
 .include "breadbox/constants.s"

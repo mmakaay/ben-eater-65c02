@@ -4,7 +4,7 @@
 .ifndef COMMON_S
 COMMON_S = 1
 
-.include "macros/macros.s"
+.include "breadbox/macros/macros.s"
 
 .scope ZP
 
