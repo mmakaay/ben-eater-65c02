@@ -3,13 +3,15 @@
 message: .asciiz "Hello, world!"
 
 main:
-    ldx #0               ; Byte position to read from `hello`
+    CP_ADDRESS PRINT::string, message  ; Line up the message for printing
 
-    lda hello,x          ; Read next byte
-    beq @done            ; Stop at terminating null-byte
-    sta LCD::byte        ; Line up byte for the LCD display
-    jsr LCD::write       ; Wait for LCD display to be ready, then send byte
-    inx                  ; Move to next byte position
-    jmp @loop            ; And repeat
-@done:
-    jmp KERNAL::halt     ; Halt the computer
+    .ifdef HAS_LCD
+    jsr LCD::print                     ; Print message on the LCD display
+    .endif
+
+    .ifdef HAS_UART
+    jsr UART::print                    ; Print message on an RS232 terminal
+    .endif
+
+    jmp KERNAL::halt                   ; Stop progra execution
+

@@ -5,32 +5,24 @@ INCLUDE_WOZMON = YES
 .import __WOZMON_START__
 
 lcd_text:     .asciiz "Running WozMon"
-console_text: .asciiz "abcdefghijklmnopqrstuvwxyz Welcome to WozMon >"
+introduction: .byte   $0d, $0d, "** Welcome to BREADBOX WozMon **", $0d
+              .byte   $0d, "Commands:", $0d
+              .byte   "-------------+------------------------------------------------", $0d
+              .byte   "- XXXX       | Select and display value of $XXXX", $0d
+              .byte   "- XXXX.YYYY  | Select $XXXX and display all values up to $YYYY", $0d
+              .byte   "- XXXXR      | JMP to code at $XXXX", $0d
+              .byte   "- R          } JMP to code at last selected address", $0d
+              .byte   "-------------+------------------------------------------------", $0d, $0d, $00
 
 main:
 
-; This code will also work, when LCD support is excluded.
 .ifdef HAS_LCD
-    ldx #0
-@send_lcd_text:
-    lda lcd_text,x
-    beq @done
-    sta LCD::byte
-    jsr LCD::write
-    inx
-    jmp @send_lcd_text
-@done:
+    CP_ADDRESS PRINT::string, lcd_text
+    jsr LCD::print
 .endif
 
-    ldx #0
-@send_console_text:
-    lda console_text,x
-    beq @start
-    sta UART::byte
-    jsr UART::write_terminal
-    inx
-    jmp @send_console_text
+    CP_ADDRESS PRINT::string, introduction
+    jsr UART::print
 
-@start:
     jmp __WOZMON_START__
 

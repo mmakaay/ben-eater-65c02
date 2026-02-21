@@ -85,8 +85,27 @@ KERNAL_LCD_S = 1
         ;   A, X, Y preserved
 
     ; -------------------------------------------------------------
-    ; High level convenience wrappers.
+    ; High level API
     ; -------------------------------------------------------------
+
+    .proc print
+        ; Print a null-terminated string to the LCD.
+        ;
+        ; In (zero page):
+        ;   PRINT::string = pointer to null-terminated string
+        ; Out:
+        ;   A, X, Y preserved
+
+        PUSH_AXY
+        CP_ADDRESS PRINT::writer, _write_char
+        jsr PRINT::print
+        PULL_AXY
+        rts
+    .endproc
+
+    _write_char:
+        sta byte
+        jmp write
 
     .proc write_cmnd
         ; Wait for LCD to become ready, then write instruction to

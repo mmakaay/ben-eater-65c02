@@ -32,7 +32,7 @@ CTRL_D = $04
     msg_hint:    .asciiz "^D = debug"
 
     .proc main
-        clr_byte debug_mode
+        CLR_BYTE debug_mode
         jsr show_normal_screen
 
     @loop:
@@ -97,9 +97,9 @@ CTRL_D = $04
     ; Display the normal mode screen (title + hint).
     .proc show_normal_screen
         jsr LCD::clr
-        jsr print_title
+        PRINT LCD, msg_title
         jsr set_cursor_line2
-        jsr print_hint
+        PRINT LCD, msg_hint
         rts
     .endproc
 
@@ -167,35 +167,7 @@ CTRL_D = $04
         jsr LCD::write
         dex
         bne @loop
-        clr_byte cursor
+        CLR_BYTE cursor
         pla
-        rts
-    .endproc
-
-    ; Print the title message on LCD.
-    .proc print_title
-        ldx #0
-    @loop:
-        lda msg_title,x
-        beq @done
-        sta LCD::byte
-        jsr LCD::write
-        inx
-        jmp @loop
-    @done:
-        rts
-    .endproc
-
-    ; Print the hint message on LCD.
-    .proc print_hint
-        ldx #0
-    @loop:
-        lda msg_hint,x
-        beq @done
-        sta LCD::byte
-        jsr LCD::write
-        inx
-        jmp @loop
-    @done:
         rts
     .endproc

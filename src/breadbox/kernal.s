@@ -23,10 +23,13 @@ KERNAL_S = 1
 ; Include boot and interrupt vectors.
 .include "breadbox/vectors.s"
 
+; Utility APIs.
+.include "breadbox/print.s"
+.include "breadbox/delay.s"
+
 ; Hardware Abstraction Layer (HAL) and hardware drivers.
 .include "breadbox/io/w65c22.s"
 .include "breadbox/gpio.s"
-.include "breadbox/delay.s"
 .ifdef INCLUDE_LCD
     .if INCLUDE_LCD
         HAS_LCD = YES

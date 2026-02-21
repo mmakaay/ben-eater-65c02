@@ -12,11 +12,11 @@
 .include "breadbox/kernal.s"
 
 main:
-    set_byte GPIO::port, GPIO::PORTB  ; Select VIA port B
-    set_byte GPIO::mask, #$ff         ; Select all pins
+    SET_BYTE GPIO::port, GPIO::PORTB  ; Select VIA port B
+    SET_BYTE GPIO::mask, #$ff         ; Select all pins
     jsr GPIO::set_outputs             ; And make them outputs
 
-    set_byte GPIO::value, #$50        ; Use $50 (%01010000)
+    SET_BYTE GPIO::value, #$50        ; Use $50 (%01010000)
     jsr GPIO::set_pins                ; to set the pin output values
 
 @loop:

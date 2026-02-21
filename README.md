@@ -47,21 +47,13 @@ The mandatory example for any project:
 ```asm
 .include "breadbox/kernal.s"
 
-hello:
-    .asciiz "Hello, world!"
+message: .asciiz "Hello, world!"
 
 main:
-    ldx #0               ; Byte position to read from `hello`
-
-@loop:
-    lda hello,x          ; Read next byte
-    beq @done            ; Stop at terminating null-byte
-    sta LCD::byte        ; Line up byte for the LCD display
-    jsr LCD::write       ; Wait for LCD display to be ready, then send byte
-    inx                  ; Move to next byte position
-    jmp @loop            ; And repeat
-@done:
-    jmp KERNAL::halt     ; Halt the computer
+    CP_ADDRESS PRINT::string, message  ; Line up the message for printing
+    jsr LCD::print                     ; Print message on the LCD display
+    jsr UART::print                    ; Print message on an RS232 terminal
+    jmp KERNAL::halt                   ; Stop progra execution
 ```
 
 What you can see here is that hardware is abstracted by the KERNAL's LCD HAL

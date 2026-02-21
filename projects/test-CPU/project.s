@@ -32,27 +32,13 @@
         beq @is_65c02
 
     @is_6502:
-        lda #<msg_6502
-        sta ptr
-        lda #>msg_6502
-        sta ptr+1
+        CP_ADDRESS PRINT::string, msg_6502
         jmp @print
 
     @is_65c02:
-        lda #<msg_65c02
-        sta ptr
-        lda #>msg_65c02
-        sta ptr+1
+        CP_ADDRESS PRINT::string, msg_65c02
 
     @print:
-        ldy #0
-    @loop:
-        lda (ptr),y
-        beq @done
-        sta LCD::byte
-        jsr LCD::write
-        iny
-        bne @loop       ; branch always (message < 256 bytes)
-
-    @done:
+        jmp LCD::print
         jmp KERNAL::halt
+

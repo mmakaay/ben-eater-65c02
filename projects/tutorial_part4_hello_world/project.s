@@ -8,43 +8,43 @@
 .include "breadbox/kernal.s"
 
 main:
-    set_byte LCD::byte, #'H'
+    SET_BYTE LCD::byte, #'H'
     jsr LCD::write
 
-    set_byte LCD::byte, #'e'
+    SET_BYTE LCD::byte, #'e'
     jsr LCD::write
 
-    set_byte LCD::byte, #'l'
+    SET_BYTE LCD::byte, #'l'
     jsr LCD::write
 
-    set_byte LCD::byte, #'l'
+    SET_BYTE LCD::byte, #'l'
     jsr LCD::write
 
-    set_byte LCD::byte, #'o'
+    SET_BYTE LCD::byte, #'o'
     jsr LCD::write
 
-    set_byte LCD::byte, #','
+    SET_BYTE LCD::byte, #','
     jsr LCD::write
 
-    set_byte LCD::byte, #' '
+    SET_BYTE LCD::byte, #' '
     jsr LCD::write
 
-    set_byte LCD::byte, #'w'
+    SET_BYTE LCD::byte, #'w'
     jsr LCD::write
 
-    set_byte LCD::byte, #'o'
+    SET_BYTE LCD::byte, #'o'
     jsr LCD::write
 
-    set_byte LCD::byte, #'r'
+    SET_BYTE LCD::byte, #'r'
     jsr LCD::write
 
-    set_byte LCD::byte, #'l'
+    SET_BYTE LCD::byte, #'l'
     jsr LCD::write
 
-    set_byte LCD::byte, #'d'
+    SET_BYTE LCD::byte, #'d'
     jsr LCD::write
 
-    set_byte LCD::byte, #'!'
+    SET_BYTE LCD::byte, #'!'
     jsr LCD::write
 
     jmp KERNAL::halt

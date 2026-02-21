@@ -34,18 +34,18 @@ debounce:     .word 0
 
 .proc main
     ; Initialize the variables to zero.
-    clr_word counter
-    clr_word debounce
+    CLR_WORD counter
+    CLR_WORD debounce
 
     ; Activate interrupts for VIA's CA1 port.
     ; At the time of writing, there is no abstraction layer for this yet,
     ; so here wee only make use of constants as provided by the kernal code
     ; to setup the IRQ pin.
-    set_byte IO::IER_REGISTER, #(IO::IER_SET | IO::IER_CA1)
-    clr_byte IO::PCR_REGISTER    ; Makes CA1 trigger interrupt on falling edge
+    SET_BYTE IO::IER_REGISTER, #(IO::IER_SET | IO::IER_CA1)
+    CLR_BYTE IO::PCR_REGISTER    ; Makes CA1 trigger interrupt on falling edge
 
     ; Configure and enable the IRQ handler.
-    cp_address VECTORS::irq_vector, handle_irq
+    CP_ADDRESS VECTORS::irq_vector, handle_irq
     cli
 
 @wait_for_change:
@@ -56,7 +56,7 @@ debounce:     .word 0
     beq @wait_for_change         ; It is, wait some more.
 
     ; We've got a new counter value. Update LCD display.
-    cp_word ZP::word_a, counter  ; Store counter value in fmtdec16 argument
+    CP_WORD ZP::word_a, counter  ; Store counter value in fmtdec16 argument
     jsr fmtdec16                 ; Call fmtdec16 to convert counter to decimal.
     jsr LCD::home                ; Move the LCD cursor to the home position.
     jsr print_str_reverse        ; Print the converted string to the LCD display.
@@ -66,23 +66,23 @@ debounce:     .word 0
     lda debounce                 ; Check if debounce counter is 0.
     ora debounce + 1
     beq @wait_for_change         ; Yes, go wait for the next change.
-    dec_word debounce            ; No, decrement the debounce counter,
+    DEC_WORD debounce            ; No, decrement the debounce counter,
     jmp @debounce_countdown      ; and debounce a bit longer.
 .endproc
 
 .proc handle_irq
-    push_axy                       ; Store the registers.
+    PUSH_AXY                       ; Store the registers.
 
     lda debounce                   ; When debounce is active, ignore the IRQ.
     ora debounce + 1
     bne @done
 
-    set_word debounce, #$00, #$20  ; Enable debounce countdown.
-    inc_word counter               ; Increment the interrupt counter.
+    SET_WORD debounce, #$00, #$20  ; Enable debounce countdown.
+    INC_WORD counter               ; Increment the interrupt counter.
     
 @done:
     bit IO::PORTA_REGISTER         ; Read PORTA to clear interrupt.
-    pull_axy                       ; Restore the registers.
+    PULL_AXY                       ; Restore the registers.
     rti
 .endproc
 

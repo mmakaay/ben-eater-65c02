@@ -82,7 +82,7 @@ KERNAL_UART_S = 1
         ;   A, X, Y preserved
 
     ; -------------------------------------------------------------
-    ; High level API (waits for hardware to be ready)
+    ; High level API
     ; -------------------------------------------------------------
 
     .proc read
@@ -123,6 +123,25 @@ KERNAL_UART_S = 1
         pla
         rts
     .endproc
+
+    .proc print
+        ; Print a null-terminated string to the terminal.
+        ;
+        ; In (zero page):
+        ;   PRINT::string = pointer to null-terminated string
+        ; Out:
+        ;   A, X, Y preserved
+
+        PUSH_AXY
+        CP_ADDRESS PRINT::writer, _write_terminal_char
+        jsr PRINT::print
+        PULL_AXY
+        rts
+    .endproc
+
+    _write_terminal_char:
+        sta byte
+        jmp write_terminal
 
     .proc write_terminal
         ; Write data to a terminal.
