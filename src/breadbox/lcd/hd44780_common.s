@@ -49,7 +49,7 @@ KERNAL_LCD_HD44780_COMMON_S = 1
     .endproc
 
     ; -----------------------------------------------------------------
-    ; Internal helpers (not part of the driver API)
+    ; Private code
     ; -----------------------------------------------------------------
 
     .proc _configure_gpio_pins

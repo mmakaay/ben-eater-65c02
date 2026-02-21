@@ -3,12 +3,6 @@
 ;
 ; Parameters are passed via zero page: UART::byte.
 ; All procedures preserve A, X, Y.
-;
-; Configuration
-; -------------
-; No configuration required. The UART base address is provided
-; by the linker via __UART_START__.
-;
 ; -----------------------------------------------------------------
 
 .ifndef KERNAL_UART_S
@@ -17,11 +11,6 @@ KERNAL_UART_S = 1
 .include "breadbox/kernal.s"
 
 .scope UART
-
-    ; The start of the UART register space is configured in the
-    ; linker configuration. The linker provides the starting
-    ; address that is imported here.
-    .import __UART_START__
 
     ; Import the hardware driver.
     .if ::UART_DRIVER = ::UM6551
@@ -32,6 +21,8 @@ KERNAL_UART_S = 1
         .include "breadbox/uart/w65c51n.s"
     .elseif ::UART_DRIVER = ::W65C51N_POLL
         .include "breadbox/uart/w65c51n_poll.s"
+    .else
+        .error "UART_DRIVER invalid (see config-example.s for options)"
     .endif
 
 .segment "ZEROPAGE"

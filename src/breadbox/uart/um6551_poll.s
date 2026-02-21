@@ -60,7 +60,7 @@ KERNAL_UART_UM6551_POLL_S = 1
 
 .segment "KERNAL"
 
-    .include "breadbox/uart/um6551_common.s"
+    .include "breadbox/uart/6551_common.s"
 
     ; The ZP byte is declared in the HAL (uart.s).
     byte = UART::byte
