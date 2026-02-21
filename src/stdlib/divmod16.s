@@ -1,7 +1,7 @@
 .ifndef DIVMOD16_S
 DIVMOD16_S = 1
 
-.include "stdlib.s"
+.include "stdlib.inc"
 
 .segment "CODE"
 

@@ -40,7 +40,7 @@
 .ifndef KERNAL_WOZMON_S
 KERNAL_WOZMON_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .scope WOZMON
 

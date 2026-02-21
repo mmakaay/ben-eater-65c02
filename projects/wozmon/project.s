@@ -1,6 +1,6 @@
 INCLUDE_WOZMON = YES
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .import __WOZMON_START__
 

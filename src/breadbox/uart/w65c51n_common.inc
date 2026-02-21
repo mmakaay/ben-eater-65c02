@@ -16,7 +16,7 @@
 .ifndef KERNAL_UART_W65C51N_COMMON_S
 KERNAL_UART_W65C51N_COMMON_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 ; -----------------------------------------------------------------
 ; Shared 6551 register definitions, constants, baud rate mapping,
@@ -25,7 +25,7 @@ KERNAL_UART_W65C51N_COMMON_S = 1
 
 .segment "KERNAL"
 
-    .include "breadbox/uart/6551_common.s"
+    .include "breadbox/uart/6551_common.inc"
 
 ; -----------------------------------------------------------------
 ; Private code

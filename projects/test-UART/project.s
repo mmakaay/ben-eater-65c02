@@ -17,7 +17,7 @@
 ;   Useful for diagnosing signal integrity and flow control.
 ; ----------------------------------------------------------------------------
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 CTRL_D = $04
 

@@ -82,7 +82,7 @@
 .ifndef KERNAL_UART_W65C51N_S
 KERNAL_UART_W65C51N_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .scope DRIVER
 
@@ -101,12 +101,12 @@ KERNAL_UART_W65C51N_S = 1
 
 .segment "KERNAL"
 
-    .include "breadbox/uart/w65c51n_common.s"
+    .include "breadbox/uart/w65c51n_common.inc"
 
     ; The ZP byte is declared in the HAL (uart.s).
     byte = UART::byte
 
-    .include "breadbox/uart/6551_irq.s"
+    .include "breadbox/uart/6551_irq.inc"
 
     ; CMD register value: TIC2 (transmitter on, no TX IRQs).
     ; TX interrupts are broken on the W65C51N, so TIC2 is the only

@@ -1,9 +1,13 @@
 ; -----------------------------------------------------------------
 ; KERNAL for my Ben Eater-style breadboard computer
+;
+; This is the main include file. It pulls in all KERNAL components
+; in the correct order. Projects include this single file to get
+; the full KERNAL.
 ; -----------------------------------------------------------------
 
-.ifndef KERNAL_S
-KERNAL_S = 1
+.ifndef KERNAL_INC
+KERNAL_INC = 1
 
 ; I use a W65C02, but let's keep the code compatible for 6502. This
 ; is good for compatibility, but also for forced-upon compatibility
@@ -14,31 +18,31 @@ KERNAL_S = 1
 
 ; Include general purpose macros, that make it easier to write some
 ; often used code fragments.
-.include "breadbox/macros/macros.s"
+.include "breadbox/macros/macros.inc"
 
 ; Include global constants and the configuration file.
-.include "breadbox/constants.s"
+.include "breadbox/core/constants.inc"
 .include "config.inc"
 
-; Include boot and interrupt vectors.
-.include "breadbox/vectors.s"
+; Core: interrupt vectors.
+.include "breadbox/core/vectors.inc"
 
-; Utility APIs.
-.include "breadbox/print.s"
-.include "breadbox/delay.s"
+; Utilities.
+.include "breadbox/util/print.inc"
+.include "breadbox/util/delay.inc"
 
 ; Hardware Abstraction Layer (HAL) and hardware drivers.
-.include "breadbox/io/w65c22.s"
-.include "breadbox/gpio.s"
+.include "breadbox/io/w65c22.inc"
+.include "breadbox/gpio.inc"
 .ifdef INCLUDE_LCD
     .if INCLUDE_LCD
         HAS_LCD = YES
-        .include "breadbox/lcd.s"
+        .include "breadbox/lcd.inc"
     .endif
 .endif
 .ifdef INCLUDE_UART
     .if INCLUDE_UART
-        .include "breadbox/uart.s"
+        .include "breadbox/uart.inc"
         HAS_UART = YES
     .endif
 .endif
@@ -49,46 +53,21 @@ KERNAL_S = 1
         .ifndef HAS_UART
             .error "WoZMon cannot be enabled without UART support"
         .endif
-        .include "breadbox/wozmon.s"
+        .include "breadbox/wozmon.inc"
     .endif
 .endif
 
-.scope KERNAL
-
-.segment "KERNAL"
-
-    boot:
-        ldx #$ff  ; Initialize stack pointer
-        txs
-
-        jsr VECTORS::init
-        .ifdef HAS_LCD
-            jsr LCD::init
-        .endif
-        .ifdef HAS_UART
-            jsr UART::init
-        .endif
-
-        jmp main  ; Note: `main` must be implemented by application
-
-    ; Can be jumped to (jmp KERNAL::halt), to halt the computer.
-    halt:
-        jmp halt
-
-.endscope
+; Boot sequence (must come after HAL includes, so HAS_LCD / HAS_UART
+; are defined when the boot code's .ifdef guards are evaluated).
+.include "breadbox/core/boot.inc"
 
 ; Prevent build warnings when a segment is not used in a project.
 .segment "STACK"
 .segment "RAM"
+.segment "DATA"
 .segment "WOZMON"
 
 ; Make sure that code without segment after including this uses CODE.
 .segment "CODE"
-
-.macro HALT
-    ; Halt program execution.
-
-    jmp KERNAL::halt
-.endmacro
 
 .endif

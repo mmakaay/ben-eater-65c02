@@ -45,7 +45,7 @@
 .segment "VECTORS"
 
     .word dispatch_nmi         ; Non-Maskable Interrupt vector
-    .word ::KERNAL::boot         ; Reset vector
+    .word ::KERNAL::boot       ; Reset vector
     .word dispatch_irq         ; IRQ vector
 
 .endscope

@@ -1,7 +1,7 @@
 .ifndef CLEAR16_S
 CLEAR16_S = 1
 
-.include "set_word.s"
+.include "set_word.inc"
 
 .macro CLR_WORD target
     ; Store #0000 in a word.

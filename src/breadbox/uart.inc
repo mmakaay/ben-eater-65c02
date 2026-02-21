@@ -8,19 +8,19 @@
 .ifndef KERNAL_UART_S
 KERNAL_UART_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .scope UART
 
     ; Import the hardware driver.
     .if ::UART_DRIVER = ::UM6551
-        .include "breadbox/uart/um6551.s"
+        .include "breadbox/uart/um6551.inc"
     .elseif ::UART_DRIVER = ::UM6551_POLL
-        .include "breadbox/uart/um6551_poll.s"
+        .include "breadbox/uart/um6551_poll.inc"
     .elseif ::UART_DRIVER = ::W65C51N
-        .include "breadbox/uart/w65c51n.s"
+        .include "breadbox/uart/w65c51n.inc"
     .elseif ::UART_DRIVER = ::W65C51N_POLL
-        .include "breadbox/uart/w65c51n_poll.s"
+        .include "breadbox/uart/w65c51n_poll.inc"
     .else
         .error "UART_DRIVER invalid (see config-example.s for options)"
     .endif

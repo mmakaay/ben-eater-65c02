@@ -47,13 +47,13 @@
 .ifndef KERNAL_UART_W65C51N_POLL_S
 KERNAL_UART_W65C51N_POLL_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .scope DRIVER
 
 .segment "KERNAL"
 
-    .include "breadbox/uart/w65c51n_common.s"
+    .include "breadbox/uart/w65c51n_common.inc"
 
     ; The ZP byte is declared in the HAL (uart.s).
     byte = UART::byte

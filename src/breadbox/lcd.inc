@@ -21,13 +21,13 @@
 .ifndef KERNAL_LCD_S
 KERNAL_LCD_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .scope LCD
     .if ::LCD_DRIVER = ::HD44780_8BIT
-        .include "breadbox/lcd/hd44780_8bit.s"
+        .include "breadbox/lcd/hd44780_8bit.inc"
     .elseif ::LCD_DRIVER = ::HD44780_4BIT
-        .include "breadbox/lcd/hd44780_4bit.s"
+        .include "breadbox/lcd/hd44780_4bit.inc"
     .else
         .error "LCD_DRIVER invalid (see config-example.s for options)"
     .endif

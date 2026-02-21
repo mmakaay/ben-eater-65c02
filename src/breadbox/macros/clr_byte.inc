@@ -1,7 +1,7 @@
 .ifndef CLEAR8_S
 CLEAR8_S = 1
 
-.include "set_byte.s"
+.include "set_byte.inc"
 
 .macro CLR_BYTE target
     ; Store #00 in a byte.

@@ -5,7 +5,7 @@
 ; Result   : https://youtu.be/FY3zTUaykVo?t=1614
 ; Code     : https://eater.net/downloads/hello-world.s
 ;
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 main:
     SET_BYTE LCD::byte, #'H'
@@ -47,4 +47,4 @@ main:
     SET_BYTE LCD::byte, #'!'
     jsr LCD::write
 
-    jmp KERNAL::halt
+    HALT

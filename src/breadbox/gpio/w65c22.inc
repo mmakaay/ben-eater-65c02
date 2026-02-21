@@ -16,7 +16,7 @@
 .ifndef KERNAL_GPIO_VIA_W65C22_S
 KERNAL_GPIO_VIA_W65C22_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .scope DRIVER
 

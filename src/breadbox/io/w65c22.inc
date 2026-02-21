@@ -8,7 +8,7 @@
 .ifndef KERNAL_VIA_W65C22_S
 KERNAL_VIA_W65C22_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 ; The start of the VIA register space is configured in the
 ; linker configuration. The linker provides the starting

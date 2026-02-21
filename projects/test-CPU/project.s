@@ -10,7 +10,7 @@
 ; The result is shown on the LCD display.
 ; -----------------------------------------------------------------
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .segment "ZEROPAGE"
 
@@ -33,8 +33,8 @@
 
     @is_6502:
         PRINT LCD, msg_6502
-        jmp KERNAL::halt
+        HALT
 
     @is_65c02:
         PRINT LCD, msg_65c02
-        jmp KERNAL::halt
+        HALT

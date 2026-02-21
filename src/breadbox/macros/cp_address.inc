@@ -1,7 +1,7 @@
 .ifndef CP_ADDRESS_S
 CP_ADDRESS_S = 1
 
-.include "set_word.s"
+.include "set_word.inc"
 
 .macro CP_ADDRESS target, source
     ; Store a 16 bit address in two consecutive memory positions.

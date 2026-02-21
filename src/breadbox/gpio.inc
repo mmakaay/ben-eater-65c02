@@ -27,7 +27,7 @@
 .ifndef KERNAL_GPIO_S
 KERNAL_GPIO_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .scope GPIO
 
@@ -42,7 +42,7 @@ KERNAL_GPIO_S = 1
 
     ; Import the hardware driver.
     ; Currently, there is only one.
-    .include "breadbox/gpio/w65c22.s"
+    .include "breadbox/gpio/w65c22.inc"
 
     ; Port selection constants.
     PORTA = 1

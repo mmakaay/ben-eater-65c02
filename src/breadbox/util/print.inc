@@ -31,7 +31,7 @@
 .ifndef KERNAL_PRINT_S
 KERNAL_PRINT_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .scope PRINT
 

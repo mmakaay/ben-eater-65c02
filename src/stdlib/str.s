@@ -4,7 +4,7 @@
 .ifndef STR_S
 STR_S = 1
 
-.include "stdlib.s"
+.include "stdlib.inc"
 
 .proc str_clr
     ; Clear the ZP::str string.

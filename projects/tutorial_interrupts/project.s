@@ -22,7 +22,7 @@
 ;   saves a lot of resources, compared to continuously updating the LCD,
 ;   even when there is no new counter value to display.
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 .include "stdlib/fmtdec16.s"
 
 .segment "ZEROPAGE"

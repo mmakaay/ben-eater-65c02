@@ -1,7 +1,7 @@
 .ifndef STORE16_S
 STORE16_S = 1
 
-.include "set_byte.s"
+.include "set_byte.inc"
 
 .macro SET_WORD target, lo, hi
     ; Store a 16 bit value (word) in two consecutive memory positions.

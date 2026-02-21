@@ -12,7 +12,7 @@
 ; below, we can make use of the high level `LCD::write`
 ; subroutine.
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 message: .asciiz "Hello, world!"
 
@@ -26,4 +26,4 @@ main:
     inx                ; Move to the next byte position
     jmp @loop          ; And repeat
 @done:
-    jmp KERNAL::halt   ; Halt the computer
+    HALT               ; Halt the computer

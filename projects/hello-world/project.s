@@ -1,4 +1,4 @@
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 message: .asciiz "Hello, world!"
 
@@ -13,5 +13,5 @@ main:
     jsr UART::print                    ; Print message on an RS232 terminal
     .endif
 
-    jmp KERNAL::halt                   ; Stop progra execution
+    HALT                               ; Stop progra execution
 

@@ -13,7 +13,7 @@
 .ifndef KERNAL_UART_6551_COMMON_S
 KERNAL_UART_6551_COMMON_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .segment "KERNAL"
 

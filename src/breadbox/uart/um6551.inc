@@ -97,7 +97,7 @@
 .ifndef KERNAL_UART_UM6551_S
 KERNAL_UART_UM6551_S = 1
 
-.include "breadbox/kernal.s"
+.include "breadbox/kernal.inc"
 
 .scope DRIVER
 
@@ -122,12 +122,12 @@ KERNAL_UART_UM6551_S = 1
 
 .segment "KERNAL"
 
-    .include "breadbox/uart/6551_common.s"
+    .include "breadbox/uart/6551_common.inc"
 
     ; The ZP byte is declared in the HAL (uart.s).
     byte = UART::byte
 
-    .include "breadbox/uart/6551_irq.s"
+    .include "breadbox/uart/6551_irq.inc"
 
     ; Combined CMD register values for TIC mode switching.
     ; All base flags (parity, echo, DTR, IRQ) are baked in, so
