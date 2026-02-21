@@ -45,7 +45,7 @@ debounce:     .word 0
     CLR_BYTE IO::PCR_REGISTER    ; Makes CA1 trigger interrupt on falling edge
 
     ; Configure and enable the IRQ handler.
-    CP_ADDRESS VECTORS::irq_vector, handle_irq
+    SET_IRQ handle_irq
     cli
 
 @wait_for_change:

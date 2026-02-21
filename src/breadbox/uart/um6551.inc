@@ -167,7 +167,7 @@ KERNAL_UART_UM6551_S = 1
         SET_BYTE CMD_REGISTER, #CMD_TX_IDLE
 
         ; Now install the IRQ handler and enable interrupts.
-        CP_ADDRESS ::VECTORS::irq_vector, _irq_handler
+        SET_IRQ _irq_handler
         cli
 
         PULL_AXY

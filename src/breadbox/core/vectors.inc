@@ -7,6 +7,22 @@
     nmi_vector: .res 2
     irq_vector: .res 2
 
+.macro SET_NMI handler
+    ; Set the address of the NMI (Non-Maskable Interrupt) handler.
+
+    CP_ADDRESS VECTORS::nmi_vector, handler
+.endmacro
+
+.macro SET_IRQ handler
+    ; Set the address of the IRQ (Interrupt ReQuest) handler.
+    ;
+    ; Note that interrupts are disabled (using `sei`) by default during boot.
+    ; You will have to call `cli` to enable interrupt handling after setting
+    ; the IRQ handler.
+
+    CP_ADDRESS VECTORS::irq_vector, handler
+.endmacro
+
 .segment "KERNAL"
 
     .proc init
@@ -24,8 +40,8 @@
         ; interrupt handling, these must be enabled using `cli`.
         sei
 
-        CP_ADDRESS nmi_vector, default_nmi
-        CP_ADDRESS irq_vector, default_irq
+        SET_NMI default_nmi
+        SET_IRQ default_irq
 
         rts
     .endproc
